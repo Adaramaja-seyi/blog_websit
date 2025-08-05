@@ -1,4 +1,5 @@
 <template>
+  
   <div class="home-container">
     <h1>Welcome to BlogPlatform</h1>
     <p class="lead">Join our community of writers and readers</p>
@@ -12,8 +13,14 @@
 </template>
 
 <script>
+
 export default {
   name: "Home",
+  components: {
+  
+    
+  },
+  
 };
 </script>
 

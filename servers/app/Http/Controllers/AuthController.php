@@ -57,7 +57,7 @@ class AuthController extends Controller
                 'email' => ['The credentials are incorrect.'],
             ]);
         }
-
+ 
         return response()->json([
             'user'  => $user,
             'token' => $user->createToken('auth_token')->plainTextToken,

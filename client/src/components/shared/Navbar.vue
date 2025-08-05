@@ -122,7 +122,7 @@ export default {
         await api.logout();
         localStorage.removeItem("token");
         localStorage.removeItem("user");
-        this.$toast.success("Logged out successfully");
+        // this.$toast.success("Logged out successfully");
         this.$router.push("/login");
       } catch (error) {
         this.$toast.error(error.response?.data?.message || "Logout failed");

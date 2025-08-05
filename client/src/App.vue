@@ -1,7 +1,7 @@
 <template>
   <div>
     <!-- Global Navigation -->
-    <Navbar />
+    <!-- <Navbar /> -->
 
     <main>
       <router-view >

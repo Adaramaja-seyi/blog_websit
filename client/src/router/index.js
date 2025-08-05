@@ -18,7 +18,7 @@ const routes = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
-    meta: { requiresAuth: false }
+    meta: { requiresAuth: false } // Allow direct access without authentication
   },
   {
     path: '/login',
@@ -60,13 +60,9 @@ const router = createRouter({
 router.beforeEach((to, from, next) => {
   const isAuthenticated = localStorage.getItem('token')
 
-  // Allow direct access to all routes without authentication
-  // Only redirect authenticated users away from login/register
-  if ((to.path === '/login' || to.path === '/register') && isAuthenticated) {
-    next('/dashboard')
-  } else {
-    next()
-  }
+  // Allow access to all routes without authentication checks
+  // Users can access login/register even if authenticated
+  next()
 })
 
 export default router
