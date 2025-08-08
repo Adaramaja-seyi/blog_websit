@@ -19,12 +19,17 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user', [AuthController::class, 'update']);
+    Route::get('/user_data', [AuthController::class, 'getUserData']);
+    Route::put('/update_profile', [AuthController::class, 'updateProfile']);
 
-    // Add these routes to your api.php
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::apiResource('posts', PostController::class);
-        Route::post('posts/{post}/comments', [CommentController::class, 'store']);
-        Route::post('posts/{post}/like', [LikeController::class, 'toggle']);
-        Route::post('posts/{post}/comments/{comment}/like', [CommentController::class, 'toggle']);
-    });
+    // Dashboard routes
+    Route::get('/dashboard/stats', [PostController::class, 'getDashboardStats']);
+    Route::get('/posts/recent', [PostController::class, 'getRecentPosts']);
+    Route::get('/comments/recent', [CommentController::class, 'getRecentComments']);
+    
+    // Existing routes
+    Route::apiResource('posts', PostController::class);
+    Route::post('posts/{post}/comments', [CommentController::class, 'store']);
+    Route::post('posts/{post}/like', [LikeController::class, 'toggle']);
+    Route::post('posts/{post}/comments/{comment}/like', [CommentController::class, 'toggle']);
 });

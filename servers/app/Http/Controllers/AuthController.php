@@ -17,7 +17,7 @@ class AuthController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => [
                 'required',
-                
+
                 Password::min(8)
                     ->letters()
                     ->mixedCase()
@@ -57,7 +57,7 @@ class AuthController extends Controller
                 'email' => ['The credentials are incorrect.'],
             ]);
         }
- 
+
         return response()->json([
             'user'  => $user,
             'token' => $user->createToken('auth_token')->plainTextToken,
@@ -70,5 +70,51 @@ class AuthController extends Controller
         $request->user()->tokens()->delete();
 
         return response()->json(['message' => 'Logged out successfully']);
+    }
+
+  
+    public function getUserData(Request $request)
+    {
+        $user = $request->user();
+        return response()->json([
+            'user' => $user,
+            'posts' => $user->posts()->with('comments')->get(),
+            'comments' => $user->comments()->with('post')->get(),
+        ]);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $user = $request->user();
+
+        // Log incoming request data for debugging
+        dd('Profile update request:', $request->all());
+
+        $validated = $request->validate([
+            'name' => 'sometimes|required|string|max:255',
+            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
+            'bio' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'gender' => 'nullable|string|in:male,female,other',
+        ]);
+
+        // Only update provided fields
+        $updateData = [];
+        if (isset($validated['name'])) $updateData['name'] = $validated['name'];
+        if (isset($validated['email'])) $updateData['email'] = $validated['email'];
+        if (isset($validated['bio'])) $updateData['bio'] = $validated['bio'];
+        if (isset($validated['avatar'])) $updateData['avatar'] = $validated['avatar'];
+        if (isset($validated['gender'])) $updateData['gender'] = $validated['gender'];
+
+       dd('Updating user with data:', $updateData);
+
+        $user->update($updateData);
+
+    dd('User updated successfully:', $user->toArray());
+
+        return response()->json([
+            'message' => 'Profile updated successfully',
+            'user' => $user
+        ]);
     }
 }

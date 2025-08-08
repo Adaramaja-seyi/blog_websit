@@ -114,7 +114,10 @@ export default {
     async handleLogin() {
       this.loading = true;
       try {
-        await api.login(this.form);
+        const response = await api.login(this.form);
+        // Save token to local storage
+        localStorage.setItem('token', response.data.token);
+        // Redirect to dashboard
         this.$router.push("/dashboard");
       } catch (error) {
         // this.$toast.error(error.response?.data?.message || "Login failed", {

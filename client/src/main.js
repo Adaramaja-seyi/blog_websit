@@ -14,6 +14,9 @@ import { faHeart, faComment, faShare, faUser, faCog, faSignOutAlt, faFileAlt, fa
 import { faHeart as farHeart, faComment as farComment } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
 
+// Import API service
+import api from './services/api'
+
 // Toast options
 const toastOptions = {
     timeout: 3000,
@@ -41,6 +44,10 @@ library.add(
 
 // Create app
 const app = createApp(App)
+
+// Global properties
+app.config.globalProperties.$api = api
+
 // Global components
 app.component('font-awesome-icon', FontAwesomeIcon)
 

@@ -27,19 +27,47 @@ export default {
     logout() {
         return apiClient.post('/api/logout');
     },
+    
+   getUserData() {
+        return apiClient.get('/api/user_data');
+    },
+    updateProfile(data) {
+        return apiClient.put('/api/update_profile', data);
+    },
+    
     getPosts() {
         return apiClient.get('/api/posts');
     },
     createPost(data) {
-        return apiClient.post('/api/posts', data);
+        const postData = {
+            title: data.title,
+            content: data.content,
+            is_published: Boolean(data.is_published)
+        };
+        return apiClient.post('/api/posts', postData);
     },
     getPost(id) {
         return apiClient.get(`/api/posts/${id}`);
     },
     updatePost(id, data) {
-        return apiClient.put(`/api/posts/${id}`, data);
+        const postData = {
+            title: data.title,
+            content: data.content,
+            is_published: Boolean(data.is_published)
+        };
+        return apiClient.put(`/api/posts/${id}`, postData);
     },
     deletePost(id) {
         return apiClient.delete(`/api/posts/${id}`);
-    }
+    },
+    // New methods for Dashboard.vue
+   getDashboardStats(params) {
+        return apiClient.get('/api/dashboard/stats', { params });
+    },
+    getRecentPosts() {
+        return apiClient.get('/api/posts/recent');
+    },
+    getRecentComments() {
+        return apiClient.get('/api/comments/recent');
+    },
 };
