@@ -2,10 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Comment;
+use App\Models\like;
 use Illuminate\Http\Request;
 use App\Models\Post;
+use App\Models\User;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class PostController extends Controller
@@ -22,7 +24,6 @@ class PostController extends Controller
                 'data' => $posts
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching posts: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching posts'
@@ -62,17 +63,12 @@ class PostController extends Controller
                 'data' => $post,
                 'message' => 'Post created successfully'
             ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation error',
-                'errors' => $e->errors()
-            ], 422);
+  
         } catch (\Exception $e) {
-            Log::error('Error creating post: ' . $e->getMessage());
+
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating post'
+                'message' => 'Error creating post'  . $e->getMessage()
             ], 500);
         }
     }
@@ -85,10 +81,9 @@ class PostController extends Controller
                 'data' => $post->load(['user', 'comments.user'])
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching post: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
-                'message' => 'Post not found'
+                'message' => 'Post not found'  . $e->getMessage()
             ], 404);
         }
     }
@@ -117,17 +112,11 @@ class PostController extends Controller
                 'data' => $post,
                 'message' => 'Post updated successfully'
             ]);
-        } catch (\Illuminate\Validation\ValidationException $e) {
+     
+        } catch (\Exception $e) {       
             return response()->json([
                 'success' => false,
-                'message' => 'Validation error',
-                'errors' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            Log::error('Error updating post: ' . $e->getMessage());
-            return response()->json([
-                'success' => false,
-                'message' => 'Error updating post'
+                'message' => 'Error updating post'  . $e->getMessage()
             ], 500);
         }
     }
@@ -149,11 +138,10 @@ class PostController extends Controller
                 'success' => true,
                 'message' => 'Post deleted successfully'
             ]);
-        } catch (\Exception $e) {
-            Log::error('Error deleting post: ' . $e->getMessage());
+        } catch (\Exception $e) {          
             return response()->json([
                 'success' => false,
-                'message' => 'Error deleting post'
+                'message' => 'Error deleting post'  . $e->getMessage()
             ], 500);
         }
     }
@@ -168,16 +156,16 @@ class PostController extends Controller
             
             // Basic stats
             $totalPosts = Post::count();
-            $totalComments = \App\Models\Comment::count();
-            $totalLikes = \App\Models\Like::count();
-            $totalUsers = \App\Models\User::count();
+            $totalComments = Comment::count();
+            $totalLikes = like::count();
+            $totalUsers = User::count();
             
             // Today's stats
             $postsToday = Post::whereDate('created_at', today())->count();
-            $commentsToday = \App\Models\Comment::whereDate('created_at', today())->count();
+            $commentsToday = Comment::whereDate('created_at', today())->count();
             
             // Active users (users who posted in last 30 days)
-            $activeUsers = \App\Models\User::whereHas('posts', function($query) {
+            $activeUsers = User::whereHas('posts', function($query) {
                 $query->where('created_at', '>=', now()->subDays(30));
             })->count();
 
@@ -190,21 +178,21 @@ class PostController extends Controller
                     for ($i = 6; $i >= 0; $i--) {
                         $date = now()->subDays($i);
                         $postsData[] = Post::whereDate('created_at', $date)->count();
-                        $commentsData[] = \App\Models\Comment::whereDate('created_at', $date)->count();
+                        $commentsData[] = Comment::whereDate('created_at', $date)->count();
                     }
                     break;
                 case 'month':
                     for ($i = 29; $i >= 0; $i--) {
                         $date = now()->subDays($i);
                         $postsData[] = Post::whereDate('created_at', $date)->count();
-                        $commentsData[] = \App\Models\Comment::whereDate('created_at', $date)->count();
+                        $commentsData[] = Comment::whereDate('created_at', $date)->count();
                     }
                     break;
                 case 'year':
                     for ($i = 11; $i >= 0; $i--) {
                         $month = now()->subMonths($i);
                         $postsData[] = Post::whereMonth('created_at', $month->month)->count();
-                        $commentsData[] = \App\Models\Comment::whereMonth('created_at', $month->month)->count();
+                        $commentsData[] = Comment::whereMonth('created_at', $month->month)->count();
                     }
                     break;
             }
@@ -225,7 +213,6 @@ class PostController extends Controller
                 ]
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching dashboard stats: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching dashboard statistics'
@@ -263,7 +250,6 @@ class PostController extends Controller
                 'posts' => $posts
             ]);
         } catch (\Exception $e) {
-            Log::error('Error fetching recent posts: ' . $e->getMessage());
             return response()->json([
                 'success' => false,
                 'message' => 'Error fetching recent posts'

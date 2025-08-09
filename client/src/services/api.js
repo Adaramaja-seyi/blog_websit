@@ -1,11 +1,8 @@
 import axios from 'axios';
 
 const apiClient = axios.create({
-    baseURL: import.meta.env.VITE_BASE_URL || 'http://localhost:8000',
-    withCredentials: true,
-    headers: {
-        'Content-Type': 'application/json',
-    },
+    baseURL: '/api',
+    withCredentials: true
 });
 
 // Add token interceptor
@@ -19,24 +16,25 @@ apiClient.interceptors.request.use(config => {
 
 export default {
     createUsers(data) {
-        return apiClient.post('/api/create_users', data);
+        return apiClient.post('/create_users', data);
     },
     login(data) {
-        return apiClient.post('/api/login', data);
+        return apiClient.post('/login', data);
     },
     logout() {
-        return apiClient.post('/api/logout');
+        return apiClient.post('/logout');
     },
-    
-   getUserData() {
-        return apiClient.get('/api/user_data');
+
+    getUserData() {
+        return apiClient.get('/user_data');
     },
-    updateProfile(data) {
-        return apiClient.put('/api/update_profile', data);
+
+    updateProfile(data, config = {}) {
+        return apiClient.post('/update_profile', data, config);
     },
-    
+
     getPosts() {
-        return apiClient.get('/api/posts');
+        return apiClient.get('/posts');
     },
     createPost(data) {
         const postData = {
@@ -44,10 +42,10 @@ export default {
             content: data.content,
             is_published: Boolean(data.is_published)
         };
-        return apiClient.post('/api/posts', postData);
+        return apiClient.post('/posts', postData);
     },
     getPost(id) {
-        return apiClient.get(`/api/posts/${id}`);
+        return apiClient.get(`/posts/${id}`);
     },
     updatePost(id, data) {
         const postData = {
@@ -55,19 +53,19 @@ export default {
             content: data.content,
             is_published: Boolean(data.is_published)
         };
-        return apiClient.put(`/api/posts/${id}`, postData);
+        return apiClient.put(`/posts/${id}`, postData);
     },
     deletePost(id) {
-        return apiClient.delete(`/api/posts/${id}`);
+        return apiClient.delete(`/posts/${id}`);
     },
     // New methods for Dashboard.vue
-   getDashboardStats(params) {
-        return apiClient.get('/api/dashboard/stats', { params });
+    getDashboardStats(params) {
+        return apiClient.get('/dashboard/stats', { params });
     },
     getRecentPosts() {
-        return apiClient.get('/api/posts/recent');
+        return apiClient.get('/posts/recent');
     },
     getRecentComments() {
-        return apiClient.get('/api/comments/recent');
+        return apiClient.get('/comments/recent');
     },
 };

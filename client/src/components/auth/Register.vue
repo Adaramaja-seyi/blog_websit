@@ -15,8 +15,21 @@
           <router-link to="/" class="logo-link">
             <div class="logo">
               <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
-                <circle cx="20" cy="20" r="16" fill="#2563EB" stroke="#E0E7FF" stroke-width="8"/>
-                <path d="M15 20L18 23L25 16" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  fill="#2563EB"
+                  stroke="#E0E7FF"
+                  stroke-width="8"
+                />
+                <path
+                  d="M15 20L18 23L25 16"
+                  stroke="white"
+                  stroke-width="2.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </div>
           </router-link>
@@ -99,17 +112,21 @@
         <!-- Terms Agreement -->
         <div class="terms-group">
           <label class="terms-checkbox">
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               class="checkbox-input"
               v-model="form.terms"
               :disabled="loading"
               required
-            >
+            />
             <span class="checkbox-custom"></span>
             <span class="checkbox-text">
-              I agree to the 
-              <a href="#" @click.prevent="!loading && showTerms()" class="terms-link">
+              I agree to the
+              <a
+                href="#"
+                @click.prevent="!loading && showTerms()"
+                class="terms-link"
+              >
                 Terms and Conditions
               </a>
             </span>
@@ -120,7 +137,11 @@
         <div v-if="errors.length" class="error-container">
           <div class="error-icon">⚠</div>
           <div class="error-list">
-            <div v-for="(error, index) in errors" :key="index" class="error-item">
+            <div
+              v-for="(error, index) in errors"
+              :key="index"
+              class="error-item"
+            >
               {{ error }}
             </div>
           </div>
@@ -139,8 +160,12 @@
       <!-- Footer -->
       <div class="auth-footer">
         <p class="login-text">
-          Already have an account? 
-          <router-link to="/login" class="login-link" :class="{ 'disabled-link': loading }">
+          Already have an account?
+          <router-link
+            to="/login"
+            class="login-link"
+            :class="{ 'disabled-link': loading }"
+          >
             Sign in
           </router-link>
         </p>
@@ -157,7 +182,6 @@
 
 <script>
 import TermsContent from "@/components/auth/TermsContent.vue";
-import 'vue-toastification/dist/index.css'
 import api from "@/services/api";
 import { Modal } from "bootstrap";
 
@@ -174,33 +198,30 @@ export default {
         terms: false,
       },
       loading: false,
-      errors: [],
+      errors: {},
     };
   },
   methods: {
     async handleRegister() {
       this.loading = true;
-      this.errors = [];
+      this.errors = {};
       try {
         const response = await api.createUsers(this.form);
-        // this.$toast.success(
-        //   "Registration successful! Redirecting to login...", 
-        //   {
-        //     timeout: 2000,
-        //     position: "top-right",
-        //     hideProgressBar: false,
-        //   }
-        // );
-        this.$router.push("/login");
+        this.$toast.success(
+          response.data.message || "Success! Redirecting to login..."
+        );
+        setTimeout(() => {
+          this.$router.push("/login");
+        }, 2000);
       } catch (error) {
-        if (error.response?.data?.errors) {
-          for (const field in error.response.data.errors) {
-            this.errors.push(...error.response.data.errors[field]);
-          }
-        } else {
-          this.errors.push(
-            error.response?.data?.message || "Registration failed"
+        if (error.response && error.response.data) {
+          this.errors = error.response.data.errors || {};
+          this.$toast.error(
+            error.response.data.message ||
+              "Registration failed. Please try again."
           );
+        } else {
+          this.$toast.error("An unexpected error occurred.");
         }
       } finally {
         this.loading = false;
@@ -229,7 +250,7 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 1.5rem 1rem;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   position: relative;
   overflow: hidden;
 }
@@ -248,7 +269,11 @@ export default {
 .circle {
   position: absolute;
   border-radius: 50%;
-  background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(147, 197, 253, 0.08));
+  background: linear-gradient(
+    135deg,
+    rgba(37, 99, 235, 0.08),
+    rgba(147, 197, 253, 0.08)
+  );
   animation: float 8s ease-in-out infinite;
 }
 
@@ -269,8 +294,13 @@ export default {
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  50% { transform: translateY(-15px) rotate(180deg); }
+  0%,
+  100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-15px) rotate(180deg);
+  }
 }
 
 /* Main Card */
@@ -488,7 +518,7 @@ export default {
 }
 
 .checkbox-input:checked + .checkbox-custom::after {
-  content: '';
+  content: "";
   position: absolute;
   left: 5px;
   top: 1px;
@@ -608,8 +638,12 @@ export default {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* Footer Section */
@@ -646,27 +680,27 @@ export default {
   .auth-container {
     padding: 1rem;
   }
-  
+
   .auth-card {
     padding: 2rem 1.5rem;
     border-radius: 16px;
     max-width: 100%;
   }
-  
+
   .welcome-title {
     font-size: 1.5rem;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
     gap: 0;
     margin-bottom: 1rem;
   }
-  
+
   .input-group {
     margin-bottom: 1rem;
   }
-  
+
   .circle-1,
   .circle-2 {
     display: none;
@@ -677,11 +711,11 @@ export default {
   .auth-card {
     padding: 1.5rem 1rem;
   }
-  
+
   .welcome-title {
     font-size: 1.4rem;
   }
-  
+
   .form-input {
     padding: 0.7rem 0.9rem;
   }

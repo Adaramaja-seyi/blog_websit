@@ -157,21 +157,34 @@ export default {
         const formData = new FormData();
         formData.append("name", this.form.name);
         formData.append("email", this.form.email);
-        formData.append("bio", this.form.bio);
-        formData.append("gender", this.form.gender);
-
-        if (this.avatarFile) {
-          formData.append("avatar", this.avatarFile); // Append file
+        if (this.form.bio) {
+          formData.append("bio", this.form.bio);
+        }
+        if (this.form.gender) {
+          formData.append("gender", this.form.gender);
+        }
+        // Debug: log avatarFile type and value
+        console.log(
+          "avatarFile:",
+          this.avatarFile,
+          "isFile:",
+          this.avatarFile instanceof File
+        );
+        // Only append avatar if it's a File object
+        if (this.avatarFile && this.avatarFile instanceof File) {
+          formData.append("avatar", this.avatarFile);
         }
 
         // Laravel expects PUT, so spoof it
         formData.append("_method", "PUT");
 
-        const response = await api.updateProfile("/update_profile", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-          withCredentials: true, // Needed if using Laravel Sanctum
+        // Debug: log FormData entries
+        for (let pair of formData.entries()) {
+          console.log(pair[0] + ", " + pair[1]);
+        }
+
+        const response = await api.updateProfile(formData, {
+          withCredentials: true,
         });
 
         const updatedUser = response.data.user || {
@@ -183,9 +196,13 @@ export default {
         localStorage.setItem("user", JSON.stringify(updatedUser));
         this.$emit("profile-updated", updatedUser);
         this.$toast?.success("Profile updated successfully!");
+        this.avatarFile = null; // Clear after upload
         this.closeModal();
       } catch (error) {
         console.error("Profile update error:", error);
+        if (error.response) {
+          console.log("Backend error response:", error.response.data);
+        }
         const errorMessage =
           error.response?.data?.message || "Failed to update profile";
         this.$toast?.error(errorMessage);
@@ -196,8 +213,6 @@ export default {
   },
 };
 </script>
-
-
 
 <style scoped>
 .modal-backdrop {

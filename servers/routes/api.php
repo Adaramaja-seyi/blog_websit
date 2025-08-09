@@ -21,12 +21,13 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('/user', [AuthController::class, 'update']);
     Route::get('/user_data', [AuthController::class, 'getUserData']);
     Route::put('/update_profile', [AuthController::class, 'updateProfile']);
+    Route::post('/update_profile', [AuthController::class, 'updateProfile']);
 
     // Dashboard routes
     Route::get('/dashboard/stats', [PostController::class, 'getDashboardStats']);
     Route::get('/posts/recent', [PostController::class, 'getRecentPosts']);
     Route::get('/comments/recent', [CommentController::class, 'getRecentComments']);
-    
+
     // Existing routes
     Route::apiResource('posts', PostController::class);
     Route::post('posts/{post}/comments', [CommentController::class, 'store']);

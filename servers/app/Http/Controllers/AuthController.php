@@ -12,6 +12,7 @@ class AuthController extends Controller
 {
     public function register(Request $request)
     {
+        // dd($request->all());    
         $validated = $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|max:255|unique:users',
@@ -19,11 +20,11 @@ class AuthController extends Controller
                 'required',
 
                 Password::min(8)
-                    ->letters()
-                    ->mixedCase()
-                    ->numbers()
-                    ->symbols()
-                    ->uncompromised()
+                // ->letters()
+                // ->mixedCase()
+                // ->numbers()
+                // ->symbols()
+                // ->uncompromised()
             ],
         ]);
 
@@ -32,13 +33,12 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
-
-        // You could generate and send a verification email here
-        // $user->sendEmailVerificationNotification();
+        $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully',
-            'user' => $user
+            'user' => $user,
+            'token' => $token
         ], 201);
     }
 
@@ -72,7 +72,7 @@ class AuthController extends Controller
         return response()->json(['message' => 'Logged out successfully']);
     }
 
-  
+
     public function getUserData(Request $request)
     {
         $user = $request->user();
@@ -87,9 +87,6 @@ class AuthController extends Controller
     {
         $user = $request->user();
 
-        // Log incoming request data for debugging
-        dd('Profile update request:', $request->all());
-
         $validated = $request->validate([
             'name' => 'sometimes|required|string|max:255',
             'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
@@ -98,19 +95,21 @@ class AuthController extends Controller
             'gender' => 'nullable|string|in:male,female,other',
         ]);
 
+
         // Only update provided fields
         $updateData = [];
         if (isset($validated['name'])) $updateData['name'] = $validated['name'];
         if (isset($validated['email'])) $updateData['email'] = $validated['email'];
         if (isset($validated['bio'])) $updateData['bio'] = $validated['bio'];
-        if (isset($validated['avatar'])) $updateData['avatar'] = $validated['avatar'];
         if (isset($validated['gender'])) $updateData['gender'] = $validated['gender'];
 
-       dd('Updating user with data:', $updateData);
+        // Handle avatar upload and save correct path
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $updateData['avatar'] = '/storage/' . $avatarPath;
+        }
 
         $user->update($updateData);
-
-    dd('User updated successfully:', $user->toArray());
 
         return response()->json([
             'message' => 'Profile updated successfully',

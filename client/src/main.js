@@ -2,9 +2,8 @@
 import { createApp } from 'vue'
 import App from './App.vue'
 import router from './router'
-import Toast from 'vue-toastification'
-import 'vue-toastification/dist/index.css'
-
+import ToastPlugin from 'vue-toast-notification';
+import 'vue-toast-notification/dist/theme-bootstrap.css';
 // Bootstrap JS
 import 'bootstrap/dist/js/bootstrap.bundle.min.js'
 
@@ -13,24 +12,6 @@ import { library } from '@fortawesome/fontawesome-svg-core'
 import { faHeart, faComment, faShare, faUser, faCog, faSignOutAlt, faFileAlt, faComments, faTachometerAlt } from '@fortawesome/free-solid-svg-icons'
 import { faHeart as farHeart, faComment as farComment } from '@fortawesome/free-regular-svg-icons'
 import { FontAwesomeIcon } from '@fortawesome/vue-fontawesome'
-
-// Import API service
-import api from './services/api'
-
-// Toast options
-const toastOptions = {
-    timeout: 3000,
-    closeOnClick: true,
-    pauseOnFocusLoss: true,
-    pauseOnHover: true,
-    draggable: true,
-    draggablePercent: 0.6,
-    showCloseButtonOnHover: false,
-    hideProgressBar: true,
-    closeButton: 'button',
-    icon: true,
-    rtl: false
-}
 
 // FontAwesome library setup
 library.add(
@@ -45,15 +26,16 @@ library.add(
 // Create app
 const app = createApp(App)
 
-// Global properties
-app.config.globalProperties.$api = api
-
-// Global components
 app.component('font-awesome-icon', FontAwesomeIcon)
 
 // Use plugins
 app.use(router)
-app.use(Toast, toastOptions)
+app.use(ToastPlugin, {
+    position: 'top-right',
+    duration: 2000,
+    dismissible: true,
+    pauseOnHover: true,
+});
 
 // Mount
 app.mount('#app')
