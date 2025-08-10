@@ -20,11 +20,11 @@ class AuthController extends Controller
                 'required',
 
                 Password::min(8)
-                // ->letters()
-                // ->mixedCase()
-                // ->numbers()
-                // ->symbols()
-                // ->uncompromised()
+                    // ->letters()
+                    // ->mixedCase()
+                    // ->numbers()
+                    // ->symbols()
+                    // ->uncompromised()
             ],
         ]);
 
@@ -33,7 +33,7 @@ class AuthController extends Controller
             'email' => $validated['email'],
             'password' => Hash::make($validated['password']),
         ]);
-        $token = $user->createToken('auth_token')->plainTextToken;
+        $token = $user->createToken($request->name)->plainTextToken;
 
         return response()->json([
             'message' => 'User registered successfully',
@@ -60,7 +60,7 @@ class AuthController extends Controller
 
         return response()->json([
             'user'  => $user,
-            'token' => $user->createToken('auth_token')->plainTextToken,
+            'token' => $user->createToken($user->name)->plainTextToken,
         ]);
     }
 
@@ -92,9 +92,9 @@ class AuthController extends Controller
             'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
             'bio' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'gender' => 'nullable|string|in:male,female,other',
         ]);
-
 
         // Only update provided fields
         $updateData = [];
@@ -103,17 +103,21 @@ class AuthController extends Controller
         if (isset($validated['bio'])) $updateData['bio'] = $validated['bio'];
         if (isset($validated['gender'])) $updateData['gender'] = $validated['gender'];
 
-        // Handle avatar upload and save correct path
+        // Handle avatar/profile_picture upload with consistent naming
         if ($request->hasFile('avatar')) {
             $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $updateData['avatar'] = '/storage/' . $avatarPath;
+        } elseif ($request->hasFile('profile_picture')) {
+            $avatarPath = $request->file('profile_picture')->store('avatars', 'public');
             $updateData['avatar'] = '/storage/' . $avatarPath;
         }
 
         $user->update($updateData);
 
+        // Return updated user data
         return response()->json([
             'message' => 'Profile updated successfully',
-            'user' => $user
+            'user' => $user->fresh()
         ]);
     }
 }

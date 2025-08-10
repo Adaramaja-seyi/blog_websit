@@ -143,8 +143,10 @@ export default {
         // Save token to local storage
         localStorage.setItem("token", response.data.token);
         this.$toast.success(response.data.message || "Login successful!");
-        // Redirect to dashboard
-        this.$router.push("/dashboard");
+        // Redirect to landing feed
+        setTimeout(() => {
+          this.$router.push({name: 'landing-feed'});
+        }, 2000);
       } catch (error) {
         this.$toast.error(error.response?.data?.message || "Login failed");
       } finally {

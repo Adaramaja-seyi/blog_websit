@@ -5,8 +5,8 @@ import router from './router'
 import ToastPlugin from 'vue-toast-notification';
 import 'vue-toast-notification/dist/theme-bootstrap.css';
 // Bootstrap JS
-import 'bootstrap/dist/js/bootstrap.bundle.min.js'
-
+ import 'bootstrap/dist/js/bootstrap.bundle.min.js'
+import 'bootstrap/dist/css/bootstrap.min.css';
 // Font Awesome
 import { library } from '@fortawesome/fontawesome-svg-core'
 import { faHeart, faComment, faShare, faUser, faCog, faSignOutAlt, faFileAlt, faComments, faTachometerAlt } from '@fortawesome/free-solid-svg-icons'

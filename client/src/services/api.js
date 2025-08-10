@@ -5,6 +5,7 @@ const apiClient = axios.create({
     withCredentials: true
 });
 
+
 // Add token interceptor
 apiClient.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
@@ -14,6 +15,22 @@ apiClient.interceptors.request.use(config => {
     return config;
 });
 
+// Add global response interceptor for 401 Unauthorized
+apiClient.interceptors.response.use(
+    response => response,
+    error => {
+        if (error.response && error.response.status === 401) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            // Try to redirect to login if router is available
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        }
+        return Promise.reject(error);
+    }
+);
+
 export default {
     createUsers(data) {
         return apiClient.post('/create_users', data);
@@ -21,16 +38,28 @@ export default {
     login(data) {
         return apiClient.post('/login', data);
     },
+
     logout() {
-        return apiClient.post('/logout');
+        // Always clear token and redirect, even if API call fails
+        return apiClient.post('/logout').catch(() => { }).finally(() => {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            if (window.location.pathname !== '/login') {
+                window.location.href = '/login';
+            }
+        });
     },
 
     getUserData() {
         return apiClient.get('/user_data');
     },
 
-    updateProfile(data, config = {}) {
-        return apiClient.post('/update_profile', data, config);
+    updateProfile(data) {
+        return apiClient.post('/update_profile', data, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        });
     },
 
     getPosts() {
@@ -67,5 +96,26 @@ export default {
     },
     getRecentComments() {
         return apiClient.get('/comments/recent');
+    },
+    
+    // Landing feed methods
+    likePost(postId) {
+        return apiClient.post(`posts/${postId}/like`);
+    },
+    
+    unlikePost(postId) {
+        return apiClient.post(`posts/${postId}/unlike`);
+    },
+    
+    addComment(postId, data) {
+        return apiClient.post(`posts/${postId}/comments`, data);
+    },
+    
+    getComments(postId) {
+        return apiClient.get(`posts/${postId}/comments`);
+    },
+    
+    getPosts(params = {}) {
+        return apiClient.get('/posts', { params });
     },
 };

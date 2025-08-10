@@ -1,27 +1,11 @@
 <template>
   <div>
-    <!-- Global Navigation -->
-    <!-- <Navbar /> -->
-
-    <main>
-      <router-view >
-      </router-view>
-    </main>
-
-   
+    <router-view />
   </div>
 </template>
 
 <script>
-import Navbar from '../src/components/shared/Navbar.vue'
-
-
 export default {
-  components: {
-    Navbar,
-    
-  },
-  
-  
+  name: 'App'
 }
 </script>
