@@ -5,7 +5,9 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CommentController;
 use App\Http\Controllers\PostController;
-use App\Http\Controllers\likecontroller;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\UserController;
+use App\Http\Controllers\LikeController;
 
 Route::get('/user', function (Request $request) {
     return $request->user();
@@ -20,17 +22,28 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/user', [AuthController::class, 'user']);
     Route::put('/user', [AuthController::class, 'update']);
     Route::get('/user_data', [AuthController::class, 'getUserData']);
-    Route::put('/update_profile', [AuthController::class, 'updateProfile']);
-    Route::post('/update_profile', [AuthController::class, 'updateProfile']);
 
-    // Dashboard routes
-    Route::get('/dashboard/stats', [PostController::class, 'getDashboardStats']);
-    Route::get('/posts/recent', [PostController::class, 'getRecentPosts']);
-    Route::get('/comments/recent', [CommentController::class, 'getRecentComments']);
-
-    // Existing routes
+    // Posts
     Route::apiResource('posts', PostController::class);
+    Route::get('posts/search/{query}', [PostController::class, 'search']);
+    Route::get('posts/tag/{tag}', [PostController::class, 'postsByTag']);
+    Route::get('posts/status/{status}', [PostController::class, 'postsByStatus']);
+
+    // Dashboard stats for current user
+    Route::get('dashboard/stats', [PostController::class, 'getDashboardStats']);
+
+    
+
+    // Comments
+    Route::apiResource('comments', CommentController::class)->except(['index']);
+    Route::get('posts/{post}/comments', [CommentController::class, 'index']);
     Route::post('posts/{post}/comments', [CommentController::class, 'store']);
-    Route::post('posts/{post}/like', [LikeController::class, 'toggle']);
-    Route::post('posts/{post}/comments/{comment}/like', [CommentController::class, 'toggle']);
+    Route::post('comments/{comment}/approve', [CommentController::class, 'approve']);
+
+    // Likes
+    Route::post('posts/{post}/like', [LikeController::class, 'like']);
+    Route::post('posts/{post}/unlike', [LikeController::class, 'unlike']);
+
+   
+    Route::post('/update_profile', [AuthController::class, 'updateProfile']);
 });

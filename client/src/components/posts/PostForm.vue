@@ -1,631 +1,315 @@
 <template>
-  <div class="post-manager">
-    <!-- Header Section -->
-    <div class="header">
-      <h2>Post Management</h2>
-      <button @click="openCreateModal" class="create-btn">
-        <i class="fas fa-plus"></i> Create Post
-      </button>
-    </div>
-
-    <!-- Posts Table -->
-    <div class="card posts-table">
-      <div class="table-responsive">
-        <table>
-          <thead>
-            <tr>
-              <th>Title</th>
-              <th>Status</th>
-              <th>Date</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-for="post in posts" :key="post.id">
-              <td>
-                <router-link :to="`/posts/${post.id}`" class="post-title">
-                  {{ post.title }}
-                </router-link>
-              </td>
-              <td>
-                <span :class="`status-badge ${post.status}`">
-                  {{ post.status }}
-                </span>
-              </td>
-              <td>{{ formatDate(post.created_at) }}</td>
-              <td class="actions">
-                <button @click="editPost(post)" class="icon-btn edit">
-                  <i class="fas fa-edit"></i>
-                </button>
-                <button @click="confirmDelete(post.id)" class="icon-btn delete">
-                  <i class="fas fa-trash"></i>
-                </button>
-                <router-link 
-                  :to="`/posts/${post.id}`" 
-                  class="icon-btn view"
-                >
-                  <i class="fas fa-eye"></i>
-                </router-link>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-
-      <!-- Pagination -->
-      <div class="pagination">
-        <button 
-          @click="prevPage" 
-          :disabled="currentPage === 1"
-          class="page-btn"
-        >
-          Previous
-        </button>
-        <span>Page {{ currentPage }} of {{ totalPages }}</span>
-        <button 
-          @click="nextPage" 
-          :disabled="currentPage === totalPages"
-          class="page-btn"
-        >
-          Next
-        </button>
-      </div>
-    </div>
-
-    <!-- Create/Edit Post Modal -->
-    <div v-if="showModal" class="modal-overlay">
-      <div class="modal-content">
-        <div class="modal-header">
-          <h3>{{ isEditing ? 'Edit Post' : 'Create New Post' }}</h3>
-          <button @click="closeModal" class="close-btn">&times;</button>
+  <div class="post-form-container">
+    <div class="post-form-card">
+      <h2 class="form-title">{{ isEdit ? "Edit Post" : "Create New Post" }}</h2>
+      <form @submit.prevent="handleSubmit" class="post-form">
+        <div class="form-group">
+          <label class="form-label">Title</label>
+          <input
+            v-model="form.title"
+            class="form-input"
+            placeholder="Enter post title"
+            required
+          />
+          <span class="input-focus-border"></span>
         </div>
-        <div class="modal-body">
-          <form @submit.prevent="submitPost">
-            <div class="form-group">
-              <label>Title</label>
-              <input 
-                v-model="currentPost.title" 
-                type="text" 
-                required
-                placeholder="Enter post title"
-              >
-            </div>
-            
-            <div class="form-group">
-              <label>Content</label>
-              <textarea 
-                v-model="currentPost.content" 
-                rows="8"
-                required
-                placeholder="Write your post content here..."
-              ></textarea>
-            </div>
-            
-            <div class="form-group">
-              <label>Publish Status</label>
-              <select v-model="currentPost.is_published" required>
-                <option :value="false">Draft</option>
-                <option :value="true">Published</option>
-              </select>
-            </div>
-            
-            <div class="form-actions">
-              <button 
-                type="button" 
-                @click="closeModal" 
-                class="cancel-btn"
-              >
-                Cancel
-              </button>
-              <button 
-                type="submit" 
-                class="submit-btn"
-                :disabled="isSubmitting"
-              >
-                {{ isSubmitting ? 'Processing...' : 'Save Post' }}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
 
-    <!-- Delete Confirmation Modal -->
-    <div v-if="showDeleteModal" class="modal-overlay">
-      <div class="modal-content confirm-modal">
-        <h3>Confirm Deletion</h3>
-        <p>Are you sure you want to delete this post? This action cannot be undone.</p>
-        <div class="modal-actions">
-          <button @click="showDeleteModal = false" class="cancel-btn">
+        <div class="form-group">
+          <label class="form-label">Content</label>
+          <textarea
+            v-model="form.content"
+            class="form-textarea"
+            rows="6"
+            placeholder="Write your post content here..."
+            required
+          ></textarea>
+          <span class="input-focus-border"></span>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Status</label>
+          <div class="status-toggle">
+            <button
+              type="button"
+              class="toggle-option"
+              :class="{ active: !form.is_published }"
+              @click="form.is_published = false"
+            >
+              Draft
+            </button>
+            <button
+              type="button"
+              class="toggle-option"
+              :class="{ active: form.is_published }"
+              @click="form.is_published = true"
+            >
+              Published
+            </button>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button class="submit-btn" type="submit">
+            {{ isEdit ? "Update Post" : "Publish Post" }}
+            <span class="btn-icon">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                fill="currentColor"
+                viewBox="0 0 16 16"
+              >
+                <path
+                  d="M15.854.146a.5.5 0 0 1 .11.54l-5.819 14.547a.75.75 0 0 1-1.329.124l-3.178-4.995L.643 7.184a.75.75 0 0 1 .124-1.33L15.314.037a.5.5 0 0 1 .54.11z"
+                />
+              </svg>
+            </span>
+          </button>
+          <router-link class="cancel-btn" :to="{ name: 'posts' }">
             Cancel
-          </button>
-          <button @click="deletePost" class="delete-btn">
-            Delete Post
-          </button>
+          </router-link>
         </div>
-      </div>
+      </form>
     </div>
   </div>
 </template>
 
 <script>
-import { format } from 'date-fns';
-
+import api from "../../services/api";
 export default {
-  name: 'PostManager',
+  name: "PostForm",
   data() {
     return {
-      posts: [],
-      currentPage: 1,
-      totalPages: 1,
-      showModal: false,
-      showDeleteModal: false,
-      isEditing: false,
-      isSubmitting: false,
-      postToDelete: null,
-      currentPost: {
-        id: null,
-        title: '',
-        content: '',
-        is_published: false
-      }
-    }
+      form: {
+        title: "",
+        content: "",
+        is_published: false,
+      },
+      isEdit: false,
+    };
   },
   created() {
-    this.fetchPosts();
+    if (this.$route.params.id) {
+      this.isEdit = true;
+      this.fetchPost();
+    }
   },
   methods: {
-    async fetchPosts() {
+    async fetchPost() {
       try {
-        const response = await this.$api.get(`/posts?page=${this.currentPage}`);
-        this.posts = response.data.posts;
-        this.totalPages = response.data.total_pages;
-      } catch (error) {
-        console.error('Error fetching posts:', error);
-        this.$toast.error('Failed to load posts');
+        const res = await api.getPost(this.$route.params.id);
+        const postData = res.data.data || res.data;
+        this.form = {
+          title: postData.title,
+          content: postData.content,
+          is_published: postData.is_published,
+        };
+      } catch (e) {
+        this.$toast && this.$toast.error("Failed to load post");
       }
     },
-    openCreateModal() {
-      this.isEditing = false;
-      this.currentPost = {
-        id: null,
-        title: '',
-        content: '',
-        status: 'draft'
-      };
-      this.showModal = true;
-    },
-    editPost(post) {
-      this.isEditing = true;
-      this.currentPost = { ...post };
-      this.showModal = true;
-    },
-    async submitPost() {
-      this.isSubmitting = true;
+    async handleSubmit() {
       try {
-        let response;
-        if (this.isEditing) {
-          response = await this.$api.updatePost(this.currentPost.id, this.currentPost);
+        if (this.isEdit) {
+          await api.updatePost(this.$route.params.id, this.form);
+          this.$toast && this.$toast.success("Post updated successfully!");
         } else {
-          response = await this.$api.createPost(this.currentPost);
+          await api.createPost(this.form);
+          this.$toast && this.$toast.success("Post created successfully!");
         }
-        
-        // Check if response exists and has the expected structure
-        if (response && response.data) {
-          const responseData = response.data;
-          
-          // Check for success flag from the API
-          if (responseData.success === true) {
-            this.$toast.success(this.isEditing ? 'Post updated successfully' : 'Post created successfully');
-            console.log('Post saved:', responseData.data || responseData);
-            this.showModal = false;
-            this.fetchPosts();
-          } else {
-            // Handle API-level failure
-            const errorMessage = responseData.message || 'Failed to save post';
-            this.$toast.error(errorMessage);
-          }
+        this.$emit("post-updated");
+        // Force reload to update dashboard and post list
+        if (this.$route.name === "post-create") {
+          this.$router.push({ name: "dashboard" });
         } else {
-          this.$toast.error('Invalid response from server');
+          this.$router.push({ name: "posts" });
         }
-      } catch (error) {
-        console.error('Error saving post:', error);
-        
-        // Handle HTTP/network errors
-        if (error.response && error.response.data) {
-          const errorData = error.response.data;
-          const errorMessage = errorData.message || 'Failed to save post';
-          
-          // Handle validation errors
-          if (errorData.errors) {
-            const firstError = Object.values(errorData.errors)[0][0];
-            this.$toast.error(firstError);
-          } else {
-            this.$toast.error(errorMessage);
-          }
-        } else if (error.request) {
-          // Network error
-          this.$toast.error('Network error. Please check your connection.');
-        } else {
-          this.$toast.error('Failed to save post');
-        }
-      } finally {
-        this.isSubmitting = false;
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      } catch (e) {
+        this.$toast && this.$toast.error("Failed to save post");
       }
     },
-    confirmDelete(postId) {
-      this.postToDelete = postId;
-      this.showDeleteModal = true;
-    },
-    async deletePost() {
-      try {
-        await this.$api.deletePost(this.postToDelete);
-        this.$toast.success('Post deleted successfully');
-        this.showDeleteModal = false;
-        this.fetchPosts();
-      } catch (error) {
-        console.error('Error deleting post:', error);
-        this.$toast.error('Failed to delete post');
-      }
-    },
-    closeModal() {
-      this.showModal = false;
-    },
-    nextPage() {
-      if (this.currentPage < this.totalPages) {
-        this.currentPage++;
-        this.fetchPosts();
-      }
-    },
-    prevPage() {
-      if (this.currentPage > 1) {
-        this.currentPage--;
-        this.fetchPosts();
-      }
-    },
-    formatDate(date) {
-      return format(new Date(date), 'MMM dd, yyyy');
-    }
-  }
-}
+  },
+};
 </script>
 
 <style scoped>
-/* Main Container */
-.post-manager {
+.post-form-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100%;
   padding: 2rem;
-  max-width: 1200px;
-  margin: 0 auto;
+  background-color: #f8fafc;
 }
 
-/* Header */
-.header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1.5rem;
-}
-
-.header h2 {
-  font-size: 1.75rem;
-  color: #2c3e50;
-  margin: 0;
-}
-
-.create-btn {
-  background-color: #4e73df;
-  color: white;
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 4px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.create-btn:hover {
-  background-color: #3a5bc7;
-}
-
-/* Table Styles */
-.posts-table {
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-}
-
-table {
+.post-form-card {
   width: 100%;
-  border-collapse: collapse;
-}
-
-th, td {
-  padding: 1rem;
-  text-align: left;
-  border-bottom: 1px solid #eaeaea;
-}
-
-th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-  color: #495057;
-}
-
-.post-title {
-  color: #4e73df;
-  text-decoration: none;
-  font-weight: 500;
-}
-
-.post-title:hover {
-  text-decoration: underline;
-}
-
-.status-badge {
-  display: inline-block;
-  padding: 0.35rem 0.75rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.status-badge.draft {
-  background-color: #f6c23e;
-  color: #fff;
-}
-
-.status-badge.published {
-  background-color: #1cc88a;
-  color: #fff;
-}
-
-.status-badge.archived {
-  background-color: #e74a3b;
-  color: #fff;
-}
-
-/* Action Buttons */
-.actions {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.icon-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background-color 0.2s;
-}
-
-.icon-btn:hover {
-  background-color: #f0f0f0;
-}
-
-.icon-btn.edit {
-  color: #4e73df;
-}
-
-.icon-btn.delete {
-  color: #e74a3b;
-}
-
-.icon-btn.view {
-  color: #1cc88a;
-}
-
-/* Pagination */
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 1.5rem;
-  gap: 1rem;
-}
-
-.page-btn {
-  padding: 0.5rem 1rem;
-  border: 1px solid #ddd;
+  max-width: 700px;
   background: white;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 2.5rem;
+  transition: all 0.3s ease;
 }
 
-.page-btn:hover:not(:disabled) {
-  background: #f8f9fa;
-}
-
-.page-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal-content {
-  background: white;
-  border-radius: 8px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  animation: modalFadeIn 0.3s;
-}
-
-.confirm-modal {
-  padding: 2rem;
+.form-title {
+  color: #1e293b;
+  font-size: 1.75rem;
+  font-weight: 600;
+  margin-bottom: 2rem;
   text-align: center;
 }
 
-.modal-header {
-  padding: 1.5rem;
-  border-bottom: 1px solid #eee;
+.post-form {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
-.modal-header h3 {
-  margin: 0;
-  font-size: 1.25rem;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #6c757d;
-}
-
-.modal-body {
-  padding: 1.5rem;
-}
-
-/* Form Styles */
 .form-group {
-  margin-bottom: 1.5rem;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
 }
 
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
+.form-label {
+  font-size: 0.875rem;
   font-weight: 500;
-  color: #495057;
+  color: #64748b;
 }
 
-.form-group input,
-.form-group textarea,
-.form-group select {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
+.form-input,
+.form-textarea {
+  padding: 0.75rem 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
   font-size: 1rem;
+  transition: all 0.2s ease;
+  background-color: #f8fafc;
 }
 
-.form-group textarea {
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #6366f1;
+  background-color: white;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.form-input::placeholder,
+.form-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.form-textarea {
   resize: vertical;
   min-height: 150px;
 }
 
-.form-group select {
-  appearance: none;
-  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 1rem;
+.input-focus-border {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background-color: #6366f1;
+  transition: width 0.3s ease;
+}
+
+.form-input:focus ~ .input-focus-border,
+.form-textarea:focus ~ .input-focus-border {
+  width: 100%;
+}
+
+.status-toggle {
+  display: flex;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  background-color: #f8fafc;
+}
+
+.toggle-option {
+  flex: 1;
+  padding: 0.75rem;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: 500;
+  color: #64748b;
+  transition: all 0.2s ease;
+}
+
+.toggle-option.active {
+  background-color: #6366f1;
+  color: white;
 }
 
 .form-actions {
   display: flex;
   justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
-}
-
-.cancel-btn {
-  padding: 0.75rem 1.5rem;
-  background: #f8f9fa;
-  border: 1px solid #ddd;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.cancel-btn:hover {
-  background: #e9ecef;
+  margin-top: 1rem;
 }
 
 .submit-btn {
   padding: 0.75rem 1.5rem;
-  background: #4e73df;
+  background-color: #6366f1;
   color: white;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s;
-}
-
-.submit-btn:hover:not(:disabled) {
-  background: #3a5bc7;
-}
-
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-}
-
-.delete-btn {
-  padding: 0.75rem 1.5rem;
-  background: #e74a3b;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.delete-btn:hover {
-  background: #c82333;
-}
-
-.modal-actions {
   display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 2rem;
+  align-items: center;
+  gap: 0.5rem;
+  transition: all 0.2s ease;
 }
 
-/* Animations */
-@keyframes modalFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+.submit-btn:hover {
+  background-color: #4f46e5;
+  transform: translateY(-1px);
 }
 
-/* Responsive */
+.cancel-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: white;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.cancel-btn:hover {
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.btn-icon {
+  display: flex;
+  align-items: center;
+}
+
 @media (max-width: 768px) {
-  .header {
+  .post-form-card {
+    padding: 1.5rem;
+  }
+
+  .form-actions {
     flex-direction: column;
-    align-items: flex-start;
-    gap: 1rem;
   }
-  
-  .create-btn {
+
+  .submit-btn,
+  .cancel-btn {
     width: 100%;
-    justify-content: center;
-  }
-  
-  table {
-    display: block;
-    overflow-x: auto;
   }
 }
 </style>

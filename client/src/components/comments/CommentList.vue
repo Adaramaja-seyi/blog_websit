@@ -1,51 +1,42 @@
 <template>
-  <div class="comment-list">
-    <div v-if="loading" class="text-center py-3">
-      <div class="spinner-border spinner-border-sm" role="status">
-        <span class="visually-hidden">Loading...</span>
-      </div>
-    </div>
-
-    <template v-else>
-      <CommentItem v-for="comment in comments" 
-                  :key="comment.id"
-                  :comment="comment"
-                  :current-user-id="currentUserId"
-                  @comment-deleted="$emit('comment-deleted')" />
-      
-      <div v-if="comments.length === 0" class="text-center py-4 text-muted">
-        No comments yet. Be the first to comment!
-      </div>
-    </template>
+  <div>
+    <h2>All Comments</h2>
+    <ul class="list-group">
+      <li v-for="comment in comments" :key="comment.id" class="list-group-item">
+        <strong>{{ comment.user?.name || "User" }}</strong
+        >:
+        {{ comment.content }}
+        <span class="text-muted small float-end">{{
+          formatDate(comment.created_at)
+        }}</span>
+      </li>
+    </ul>
   </div>
 </template>
 
 <script>
-import CommentItem from './CommentItem.vue'
-
+import axios from "axios";
 export default {
-  components: { CommentItem },
-  props: {
-    comments: {
-      type: Array,
-      required: true,
-      default: () => []
-    },
-    currentUserId: {
-      type: Number,
-      default: null
-    }
-  },
+  name: "CommentList",
   data() {
     return {
-      loading: false
-    }
-  }
-}
+      comments: [],
+    };
+  },
+  created() {
+    this.fetchComments();
+  },
+  methods: {
+    async fetchComments() {
+      const token = localStorage.getItem("token");
+      const res = await axios.get("http://localhost:8000/api/comments", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      this.comments = res.data.data || res.data;
+    },
+    formatDate(date) {
+      return new Date(date).toLocaleString();
+    },
+  },
+};
 </script>
-
-<style scoped>
-.comment-list {
-  margin-top: 2rem;
-}
-</style>
