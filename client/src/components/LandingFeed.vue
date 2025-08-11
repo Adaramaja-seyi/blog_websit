@@ -6,12 +6,12 @@
         <div class="logo">
           <h1>SocialConnect</h1>
         </div>
-        
+
         <div class="search-bar">
           <i class="bi bi-search"></i>
-          <input type="text" placeholder="Search SocialConnect">
+          <input type="text" placeholder="Search SocialConnect" />
         </div>
-        
+
         <nav class="main-nav">
           <router-link to="/" class="nav-item active">
             <i class="bi bi-house-door"></i>
@@ -26,8 +26,6 @@
             <i class="bi bi-shop"></i>
           </router-link>
         </nav>
-        
-        
       </div>
     </header>
 
@@ -36,29 +34,29 @@
       <div class="main-content">
         <!-- Left Sidebar -->
         <aside class="left-sidebar">
-       
           <div class="sidebar-footer">
             <p>Privacy · Terms · Advertising · Cookies · More</p>
-            <p>© 2024 SocialConnect</p>
+            <p>© 2025 SocialConnect</p>
           </div>
         </aside>
 
         <!-- Main Feed -->
         <div class="feed-container">
           <!-- Stories Section -->
-          
-            
-         
 
           <!-- Post Creation -->
           <div class="post-creator">
             <div class="creator-header">
-              <img :src="userProfilePicture" class="creator-avatar" alt="User">
-              <button class="creator-prompt" @click="focusPostInput">
-                What's on your mind, {{ userName.split(' ')[0] }}?
+              <img
+                :src="userProfilePicture"
+                class="creator-avatar"
+                alt="User"
+              />
+              <button class="creator-prompt" @click="showPostModal = true">
+                What's on your mind, {{ userName.split(" ")[0] }}?
               </button>
             </div>
-            
+
             <div class="creator-options">
               <button class="option-item">
                 <i class="bi bi-camera-video-fill live-video"></i>
@@ -75,92 +73,50 @@
             </div>
           </div>
 
-          <!-- Actual Post Form (hidden until clicked) -->
-          <div class="post-form-container" v-if="showPostForm">
-            <div class="post-form-header">
-              <h3>Create Post</h3>
-              <button class="close-btn" @click="showPostForm = false">
-                <i class="bi bi-x-lg"></i>
+          <!-- Modal for PostForm -->
+          <div v-if="showPostModal" class="modal-overlay">
+            <div class="modal-content">
+              <button class="modal-close" @click="showPostModal = false">
+                &times;
               </button>
+              <PostForm
+                @post-updated="handlePostCreated"
+                @close="showPostModal = false"
+              />
             </div>
-            
-            <form @submit.prevent="createPost" class="post-form">
-              <div class="form-user">
-                <img :src="userProfilePicture" class="form-avatar" alt="User">
-                <div>
-                  <h4>{{ userName }}</h4>
-                  <select v-model="newPost.audience" class="audience-select">
-                    <option value="public">🌍 Public</option>
-                    <option value="friends">👥 Friends</option>
-                    <option value="only_me">🔒 Only me</option>
-                  </select>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <textarea 
-                  v-model="newPost.content" 
-                  placeholder="What's on your mind?" 
-                  class="post-textarea"
-                  rows="4"
-                  ref="postInput"
-                  required
-                ></textarea>
-              </div>
-              
-              <div class="form-actions">
-                <div class="add-to-post">
-                  <button type="button" class="add-item">
-                    <i class="bi bi-image"></i>
-                  </button>
-                  <button type="button" class="add-item">
-                    <i class="bi bi-person-plus"></i>
-                  </button>
-                  <button type="button" class="add-item">
-                    <i class="bi bi-emoji-smile"></i>
-                  </button>
-                  <button type="button" class="add-item">
-                    <i class="bi bi-geo-alt"></i>
-                  </button>
-                  <button type="button" class="add-item">
-                    <i class="bi bi-flag"></i>
-                  </button>
-                </div>
-                
-                <button type="submit" class="post-btn" :disabled="loading">
-                  {{ loading ? 'Posting...' : 'Post' }}
-                </button>
-              </div>
-            </form>
           </div>
 
           <!-- Posts Feed -->
           <div class="posts-feed">
-            <div class="feed-filter">
-              <button class="filter-btn active">All Posts</button>
-              <button class="filter-btn">Following</button>
-              <button class="filter-btn">Popular</button>
-            </div>
             
+
             <div class="posts-list">
-              <div 
-                v-for="post in filteredPosts" 
-                :key="post.id" 
+              <div
+                v-for="post in filteredPosts"
+                :key="post.id"
                 class="post-card"
               >
                 <div class="post-header">
                   <div class="post-user">
-                    <img 
-                      :src="post.user?.profile_picture || '/default-avatar.png'" 
-                      class="post-avatar" 
+                    <img
+                      :src="post.user?.profile_picture || '/default-avatar.png'"
+                      class="post-avatar"
                       alt="User"
                     />
                     <div class="post-user-info">
-                      <h4>{{ post.user?.name || 'Anonymous' }}</h4>
-                      <span class="post-time">{{ formatTime(post.created_at) }}</span>
+                      <h4>{{ post.user?.name || "Anonymous" }}</h4>
+                      <span class="post-time">{{
+                        formatTime(post.created_at)
+                      }}</span>
                       <span class="post-audience">
-                        <i class="bi bi-globe" v-if="post.audience === 'public'"></i>
-                        <i class="bi bi-people-fill" v-else-if="post.audience === 'friends'"></i>
+                        <i
+                          class="bi bi-globe"
+                          v-if="post.audience === 'public'"
+                        ></i>
+                        <i
+                          class="bi bi-people-fill"
+                          v-else-if="post.audience === 'friends'"
+                        ></i>
                         <i class="bi bi-lock-fill" v-else></i>
                       </span>
                     </div>
@@ -171,9 +127,23 @@
                 </div>
 
                 <div class="post-content">
-                  <p>{{ post.content }}</p>
+                  <p>
+                    {{ getPostContent(post) }}
+                    <span v-if="post.content && post.content.length > 250">
+                      <button
+                        class="see-more-btn"
+                        @click="toggleSeeMore(post.id)"
+                      >
+                        {{
+                          expandedPosts.includes(post.id)
+                            ? "See less"
+                            : "See more"
+                        }}
+                      </button>
+                    </span>
+                  </p>
                   <div class="post-image" v-if="post.image">
-                    <img :src="post.image" alt="Post image">
+                    <img :src="post.image" alt="Post image" />
                   </div>
                 </div>
 
@@ -189,20 +159,27 @@
                 </div>
 
                 <div class="post-actions">
-                  <button 
-                    @click="likePost(post.id)" 
+                  <button
+                    @click="likePost(post.id)"
                     class="action-btn"
                     :class="{ liked: post.is_liked }"
                   >
-                    <i class="bi" :class="post.is_liked ? 'bi-hand-thumbs-up-fill' : 'bi-hand-thumbs-up'"></i>
+                    <i
+                      class="bi"
+                      :class="
+                        post.is_liked
+                          ? 'bi-hand-thumbs-up-fill'
+                          : 'bi-hand-thumbs-up'
+                      "
+                    ></i>
                     <span>Like</span>
                   </button>
-                  
+
                   <button @click="toggleComments(post.id)" class="action-btn">
                     <i class="bi bi-chat"></i>
                     <span>Comment</span>
                   </button>
-                  
+
                   <button @click="sharePost(post.id)" class="action-btn">
                     <i class="bi bi-share"></i>
                     <span>Share</span>
@@ -212,15 +189,25 @@
                 <!-- Comments Section -->
                 <div v-if="post.showComments" class="comments-section">
                   <div class="comment-form">
-                    <img :src="userProfilePicture" class="comment-avatar" alt="User">
+                    <img
+                      :src="userProfilePicture"
+                      class="comment-avatar"
+                      alt="User"
+                    />
                     <div class="comment-input-container">
-                      <input 
-                        v-model="newComment[post.id]" 
-                        type="text" 
-                        placeholder="Write a comment..." 
+                      <input
+                        v-model="newComment[post.id]"
+                        type="text"
+                        placeholder="Write a comment..."
                         class="comment-input"
                         @keyup.enter="addComment(post.id)"
                       />
+                      <button
+                        class="send-comment-btn"
+                        @click="addComment(post.id)"
+                      >
+                        <i class="bi bi-send"></i> Send
+                      </button>
                       <div class="comment-options">
                         <button class="comment-option">
                           <i class="bi bi-emoji-smile"></i>
@@ -234,26 +221,37 @@
                       </div>
                     </div>
                   </div>
-                  
+
                   <div class="comments-list">
-                    <div 
-                      v-for="comment in post.comments" 
-                      :key="comment.id" 
+                    <div
+                      v-for="comment in post.comments"
+                      :key="comment.id"
                       class="comment-item"
                     >
-                      <img 
-                        :src="comment.user?.profile_picture || '/default-avatar.png'" 
-                        class="comment-avatar" 
+                      <img
+                        :src="
+                          comment.user && comment.user.profile_picture
+                            ? comment.user.profile_picture
+                            : '/default-avatar.png'
+                        "
+                        class="comment-avatar"
                         alt="User"
                       />
                       <div class="comment-content">
                         <div class="comment-user">
-                          <span class="comment-name">{{ comment.user?.name || 'Anonymous' }}</span>
-                          <span class="comment-text">{{ comment.content }}</span>
+                          <span class="comment-name">{{
+                            comment.user && comment.user.name
+                              ? comment.user.name
+                              : "Anonymous"
+                          }}</span>
+                          <span class="comment-text">{{
+                            comment.content
+                          }}</span>
                         </div>
                         <div class="comment-actions">
-                          <button class="comment-action">Like</button>
-                          <span class="comment-time">2h</span>
+                          <span class="comment-time">{{
+                            formatTime(comment.created_at)
+                          }}</span>
                         </div>
                       </div>
                     </div>
@@ -264,8 +262,12 @@
 
             <!-- Load More -->
             <div v-if="hasMorePosts" class="load-more">
-              <button @click="loadMorePosts" class="load-more-btn" :disabled="loading">
-                {{ loading ? 'Loading...' : 'Load More Posts' }}
+              <button
+                @click="loadMorePosts"
+                class="load-more-btn"
+                :disabled="loading"
+              >
+                {{ loading ? "Loading..." : "Load More Posts" }}
               </button>
             </div>
           </div>
@@ -273,7 +275,6 @@
 
         <!-- Right Sidebar -->
         <aside class="right-sidebar">
-          
           <div class="sidebar-section">
             <div class="sidebar-header">
               <h3>Contacts</h3>
@@ -287,9 +288,20 @@
               </div>
             </div>
             <div class="contacts-list">
-              <div class="contact-item" v-for="contact in contacts" :key="contact.id">
-                <div class="contact-status" :class="{ online: contact.online }"></div>
-                <img :src="contact.profile_picture" class="contact-avatar" alt="Contact">
+              <div
+                class="contact-item"
+                v-for="contact in contacts"
+                :key="contact.id"
+              >
+                <div
+                  class="contact-status"
+                  :class="{ online: contact.online }"
+                ></div>
+                <img
+                  :src="contact.profile_picture"
+                  class="contact-avatar"
+                  alt="Contact"
+                />
                 <span>{{ contact.name }}</span>
               </div>
             </div>
@@ -301,26 +313,31 @@
 </template>
 
 <script>
-import api from '@/services/api';
+import PostForm from "@/components/posts/PostForm.vue";
+import api from "@/services/api";
 
 export default {
-  name: 'FacebookFeed',
+  name: "FacebookFeed",
+  components: {
+    PostForm,
+  },
   data() {
     return {
-      userProfilePicture: '/default-avatar.png',
-      userName: 'User Name',
+      userProfilePicture: "/default-avatar.png",
+      userName: "User Name",
       stories: [],
       contacts: [],
       posts: [],
+      expandedPosts: [],
       newPost: {
-        content: '',
-        audience: 'public'
+        content: "",
+        audience: "public",
       },
       newComment: {},
-      showPostForm: false,
+      showPostModal: false,
       loading: false,
       hasMorePosts: false,
-      page: 1
+      page: 1,
     };
   },
   created() {
@@ -332,132 +349,147 @@ export default {
   computed: {
     filteredPosts() {
       return this.posts; // Filtering logic can be added here
-    }
+    },
   },
   methods: {
     async fetchUserData() {
       try {
-        const user = JSON.parse(localStorage.getItem('user'));
+        const user = JSON.parse(localStorage.getItem("user"));
         if (user) {
           this.userName = user.name;
-          this.userProfilePicture = user.profile_picture || '/default-avatar.png';
+          this.userProfilePicture =
+            user.profile_picture || "/default-avatar.png";
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
+        console.error("Error fetching user data:", error);
       }
     },
-    
+
     async fetchStories() {
       try {
         const response = await api.getStories();
         this.stories = response.data || [];
       } catch (error) {
-        console.error('Error fetching stories:', error);
+        console.error("Error fetching stories:", error);
       }
     },
-    
+
     async fetchContacts() {
       try {
         const response = await api.getContacts();
         this.contacts = response.data || [];
       } catch (error) {
-        console.error('Error fetching contacts:', error);
+        console.error("Error fetching contacts:", error);
       }
     },
-    
+
     async fetchPosts() {
       try {
         this.loading = true;
         const response = await api.getPosts({ page: this.page });
         this.posts = response.data.data || [];
-        this.hasMorePosts = response.data.data && response.data.data.length >= 10;
+        this.hasMorePosts =
+          response.data.data && response.data.data.length >= 10;
       } catch (error) {
-        console.error('Error fetching posts:', error);
+        console.error("Error fetching posts:", error);
       } finally {
         this.loading = false;
       }
     },
-    
+
     focusPostInput() {
       this.showPostForm = true;
       this.$nextTick(() => {
         this.$refs.postInput.focus();
       });
     },
-    
+
     async createPost() {
       try {
         this.loading = true;
         const response = await api.createPost(this.newPost);
         this.posts.unshift(response.data);
-        this.newPost = { content: '', audience: 'public' };
+        this.newPost = { content: "", audience: "public" };
         this.showPostForm = false;
-        this.$toast.success('Post created successfully!');
+        this.$toast.success("Post created successfully!");
       } catch (error) {
-        this.$toast.error('Error creating post');
+        this.$toast.error("Error creating post");
       } finally {
         this.loading = false;
       }
     },
-    
+
     async likePost(postId) {
+      const post = this.posts.find((p) => p.id === postId);
+      if (!post) return;
+
       try {
-        await api.likePost(postId);
-        const post = this.posts.find(p => p.id === postId);
-        if (post) {
-          post.is_liked = !post.is_liked;
-          post.likes_count = post.is_liked ? (post.likes_count || 0) + 1 : (post.likes_count || 0) - 1;
+        if (post.is_liked) {
+          // Unlike
+          await api.unlikePost(postId);
+          post.is_liked = false;
+          post.likes_count = (post.likes_count || 1) - 1;
+        } else {
+          // Like
+          await api.likePost(postId);
+          post.is_liked = true;
+          post.likes_count = (post.likes_count || 0) + 1;
         }
       } catch (error) {
-        this.$toast.error('Error liking post');
+        this.$toast.error("Error updating like status");
       }
     },
-    
+
     async addComment(postId) {
       if (!this.newComment[postId]?.trim()) return;
-      
+
       try {
-        const response = await api.addComment(postId, { content: this.newComment[postId] });
-        const post = this.posts.find(p => p.id === postId);
+        const response = await api.addComment(postId, {
+          content: this.newComment[postId],
+        });
+        const post = this.posts.find((p) => p.id === postId);
         if (post) {
           post.comments = post.comments || [];
-          post.comments.unshift(response.data);
-          post.comments_count = (post.comments_count || 0) + 1;
-          this.newComment[postId] = '';
+          post.comments.unshift(response.data.comment);
+          post.comments_count = post.comments.length;
+          this.newComment[postId] = "";
         }
       } catch (error) {
-        this.$toast.error('Error adding comment');
+        this.$toast.error("Error adding comment");
       }
     },
-    
+
     async loadMorePosts() {
       this.page += 1;
       await this.fetchPosts();
     },
-    
+
     formatTime(date) {
       const now = new Date();
       const postDate = new Date(date);
       const diffHours = Math.floor((now - postDate) / (1000 * 60 * 60));
-      
+
       if (diffHours < 1) {
         const diffMinutes = Math.floor((now - postDate) / (1000 * 60));
         return `${diffMinutes}m ago`;
       } else if (diffHours < 24) {
         return `${diffHours}h ago`;
       } else {
-        return postDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        return postDate.toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        });
       }
     },
-    
+
     handleLogout() {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
-      this.$router.push('/login');
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      this.$router.push("/login");
     },
-    
+
     toggleComments(postId) {
-      const post = this.posts.find(p => p.id === postId);
+      const post = this.posts.find((p) => p.id === postId);
       if (post) {
         post.showComments = !post.showComments;
         if (post.showComments && !post.comments) {
@@ -465,23 +497,73 @@ export default {
         }
       }
     },
-    
+
     async fetchComments(postId) {
       try {
         const response = await api.getComments(postId);
-        const post = this.posts.find(p => p.id === postId);
+        const post = this.posts.find((p) => p.id === postId);
         if (post) {
           post.comments = response.data || [];
         }
       } catch (error) {
-        console.error('Error fetching comments:', error);
+        console.error("Error fetching comments:", error);
       }
     },
-    
+
     sharePost(postId) {
-      this.$toast.info('Share functionality coming soon!');
-    }
-  }
+      const post = this.posts.find((p) => p.id === postId);
+      if (!post) return;
+      const postUrl = `${window.location.origin}/post/${postId}`;
+      if (navigator.share) {
+        navigator
+          .share({
+            title: post.title || "Check out this post!",
+            text: post.content || "",
+            url: postUrl,
+          })
+          .then(() => {
+            this.$toast.success("Post shared successfully!");
+          })
+          .catch(() => {
+            this.$toast.error("Sharing failed.");
+          });
+      } else {
+        // Fallback: copy link to clipboard
+        navigator.clipboard
+          .writeText(postUrl)
+          .then(() => {
+            this.$toast.success("Post link copied to clipboard!");
+          })
+          .catch(() => {
+            this.$toast.error("Could not copy link.");
+          });
+      }
+    },
+
+    getPostContent(post) {
+      const maxLength = 250;
+      if (
+        this.expandedPosts.includes(post.id) ||
+        !post.content ||
+        post.content.length <= maxLength
+      ) {
+        return post.content;
+      }
+      return post.content.slice(0, maxLength) + "...";
+    },
+    toggleSeeMore(postId) {
+      if (this.expandedPosts.includes(postId)) {
+        this.expandedPosts = this.expandedPosts.filter((id) => id !== postId);
+      } else {
+        this.expandedPosts.push(postId);
+      }
+    },
+
+    handlePostCreated() {
+      this.showPostModal = false;
+      this.fetchPosts();
+    },
+  },
 };
 </script>
 
@@ -503,7 +585,7 @@ export default {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 body {
@@ -581,7 +663,7 @@ body {
 }
 
 .nav-item.active::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -653,7 +735,8 @@ body {
 }
 
 /* Sidebar Styles */
-.left-sidebar, .right-sidebar {
+.left-sidebar,
+.right-sidebar {
   position: sticky;
   top: 72px;
   height: calc(100vh - 72px);
@@ -849,7 +932,7 @@ body {
 }
 
 .story::after {
-  content: '';
+  content: "";
   position: absolute;
   bottom: 0;
   left: 0;
@@ -1432,16 +1515,50 @@ body {
   background-color: #166fe5;
 }
 
+/* Modal Styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 2rem;
+  border-radius: 8px;
+  min-width: 350px;
+  max-width: 90vw;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+}
+
 /* Responsive Adjustments */
 @media (max-width: 1200px) {
   .main-content {
     grid-template-columns: 80px 1fr 280px;
   }
-  
+
   .left-sidebar .sidebar-item span {
     display: none;
   }
-  
+
   .left-sidebar .sidebar-item i {
     margin-right: 0;
     font-size: 20px;
@@ -1453,28 +1570,29 @@ body {
     grid-template-columns: 1fr;
     padding: 0 16px;
   }
-  
-  .left-sidebar, .right-sidebar {
+
+  .left-sidebar,
+  .right-sidebar {
     display: none;
   }
-  
+
   .header-content {
     padding: 0 8px;
   }
-  
+
   .search-bar {
     width: 40px;
     justify-content: center;
   }
-  
+
   .search-bar input {
     display: none;
   }
-  
+
   .nav-item {
     width: 60px;
   }
-  
+
   .user-name {
     display: none;
   }

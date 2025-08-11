@@ -38,15 +38,22 @@
           </select>
         </div>
         <button class="btn btn-primary" type="submit" :disabled="loading">
-          {{ loading ? 'Updating...' : 'Update Profile' }}
+          {{ loading ? "Updating..." : "Update Profile" }}
         </button>
       </form>
-      
+
       <!-- Success/Error Messages -->
-      <div v-if="message" :class="['alert', messageType === 'success' ? 'alert-success' : 'alert-danger', 'mt-3']">
+      <div
+        v-if="message"
+        :class="[
+          'alert',
+          messageType === 'success' ? 'alert-success' : 'alert-danger',
+          'mt-3',
+        ]"
+      >
         {{ message }}
       </div>
-      
+
       <hr />
       <div class="mb-3">
         <strong>Posts:</strong>
@@ -120,34 +127,45 @@ export default {
       }
     },
     async updateProfile() {
+      console.log("updateProfile called");
       this.loading = true;
       this.message = "";
-      
+
       const formData = new FormData();
       formData.append("name", this.form.name);
       formData.append("bio", this.form.bio || "");
       formData.append("gender", this.form.gender || "");
-      
+
       // Handle file upload - use 'avatar' field name to match backend
       if (this.form.avatar) {
         formData.append("avatar", this.form.avatar);
       }
-      
+
+      // Debug: log FormData entries before sending
+      for (let pair of formData.entries()) {
+        console.log(pair[0] + ", " + pair[1]);
+      }
+
       try {
         const response = await api.updateProfile(formData);
-        
-        // Update local user data immediately
+
+        // Update local user data and form fields immediately
         this.user = { ...this.user, ...response.data.user };
-        
+        this.form.name = response.data.user.name;
+        this.form.bio = response.data.user.bio || "";
+        this.form.gender = response.data.user.gender || "";
+        if (response.data.user.avatar) {
+          this.user.avatar = response.data.user.avatar;
+        }
+
         // Show success message
         this.showMessage("Profile updated successfully!", "success");
-        
+
         // Clear file input
         this.form.avatar = null;
-        
       } catch (error) {
         console.error("Profile update error:", error);
-        
+
         // Handle validation errors
         if (error.response?.data?.errors) {
           const errors = Object.values(error.response.data.errors).flat();
@@ -155,23 +173,26 @@ export default {
         } else if (error.response?.data?.message) {
           this.showMessage(error.response.data.message, "error");
         } else {
-          this.showMessage("Failed to update profile. Please try again.", "error");
+          this.showMessage(
+            "Failed to update profile. Please try again.",
+            "error"
+          );
         }
       } finally {
         this.loading = false;
       }
     },
-    
+
     showMessage(text, type) {
       this.message = text;
       this.messageType = type;
-      
+
       // Auto-hide message after 5 seconds
       setTimeout(() => {
         this.message = "";
       }, 5000);
     },
-    
+
     formatDate(date) {
       return new Date(date).toLocaleDateString();
     },

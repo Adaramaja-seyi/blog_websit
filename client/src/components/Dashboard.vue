@@ -1,537 +1,758 @@
 <template>
-  <div class="dashboard-pro">
-    <div class="dashboard-header-pro">
-      <div class="user-summary" v-if="user">
-        <img
-          v-if="user.profile_picture"
-          :src="user.profile_picture"
-          class="avatar-lg"
-          :alt="user.name"
-        />
-        <div v-else class="avatar-lg-alt">
-          {{ user.name ? user.name.charAt(0).toUpperCase() : "?" }}
+  <div class="dashboard-container">
+    <main class="content">
+      <!-- Header Section -->
+      <header class="content-header">
+        <div class="header-title">
+          <h1>Content Dashboard</h1>
         </div>
-        <div class="user-info">
-          <h2>{{ user.name }}</h2>
-          <p class="user-email">{{ user.email }}</p>
+        <div class="header-actions">
+          <button
+            class="btn primary"
+            @click="$router.push({ name: 'CreatePost' })"
+          >
+            + New Post
+          </button>
+          <div class="search-box">
+            <input
+              type="text"
+              v-model="searchQuery"
+              placeholder="Search your posts..."
+            />
+            <i class="icon-search"></i>
+          </div>
         </div>
-      </div>
-      <div class="quick-stats">
-        <div class="quick-stat-card">
-          <div class="quick-stat-label">Posts</div>
-          <div class="quick-stat-value">{{ stats.totalPosts }}</div>
-        </div>
-        <div class="quick-stat-card">
-          <div class="quick-stat-label">Published</div>
-          <div class="quick-stat-value">{{ stats.published }}</div>
-        </div>
-        <div class="quick-stat-card">
-          <div class="quick-stat-label">Drafts</div>
-          <div class="quick-stat-value">{{ stats.drafts }}</div>
-        </div>
-        <div class="quick-stat-card">
-          <div class="quick-stat-label">Comments</div>
-          <div class="quick-stat-value">{{ stats.comments }}</div>
-        </div>
-        <div class="quick-stat-card">
-          <div class="quick-stat-label">Likes</div>
-          <div class="quick-stat-value">{{ stats.likes }}</div>
-        </div>
-      </div>
-    </div>
+      </header>
 
-    <div class="dashboard-content-pro">
-      <div class="dashboard-row">
-        <div class="dashboard-col dashboard-col-8">
-          <div class="card-pro">
-            <div class="card-pro-header">
-              <h3>My Posts</h3>
-              <button
-                class="btn btn-primary"
-                @click="$router.push({ name: 'post-create' })"
-              >
-                <i class="bi bi-plus-lg"></i> New Post
-              </button>
-            </div>
-            <div class="filters-pro">
-              <select class="form-select" v-model="filters.status">
-                <option value="">All Status</option>
-                <option value="published">Published</option>
-                <option value="draft">Draft</option>
-              </select>
-              <select class="form-select" v-model="filters.tag">
-                <option value="">All Tags</option>
-                <option v-for="tag in tags" :key="tag.id" :value="tag.name">
-                  {{ tag.name }}
-                </option>
-              </select>
-              <div class="search-box-pro">
-                <input
-                  type="text"
-                  class="form-control"
-                  v-model="filters.search"
-                  placeholder="Search posts..."
-                />
-                <i class="bi bi-search"></i>
-              </div>
-            </div>
-            <div class="table-responsive-pro">
-              <table class="table-pro">
-                <thead>
-                  <tr>
-                    <th>Title</th>
-                    <th>Status</th>
-                    <th>Tags</th>
-                    <th>Likes</th>
-                    <th>Comments</th>
-                    <th>Created</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr v-for="post in filteredPosts" :key="post.id">
-                    <td class="post-title-pro">{{ post.title }}</td>
-                    <td>
-                      <span class="status-badge-pro" :class="post.status">{{
-                        post.status
-                      }}</span>
-                    </td>
-                    <td>
-                      <div class="tags-pro">
-                        <span
-                          v-for="tag in post.tags"
-                          :key="tag.id"
-                          class="tag-pro"
-                          >{{ tag.name }}</span
-                        >
-                      </div>
-                    </td>
-                    <td class="text-center">{{ post.likes_count }}</td>
-                    <td class="text-center">{{ post.comments_count }}</td>
-                    <td>{{ formatDate(post.created_at) }}</td>
-                    <td class="actions-pro">
-                      <button class="btn-icon-pro">
-                        <i class="bi bi-pencil-square"></i>
-                      </button>
-                      <button class="btn-icon-pro">
-                        <i class="bi bi-trash"></i>
-                      </button>
-                    </td>
-                  </tr>
-                  <tr v-if="filteredPosts.length === 0">
-                    <td colspan="7" class="no-data-pro">
-                      <i class="bi bi-exclamation-circle"></i> No posts found
-                      matching your criteria
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-              <!-- Listen for post-updated event from PostForm -->
-              <router-view @post-updated="fetchUserAndStats" />
-            </div>
-          </div>
+      <!-- Stats Cards Grid -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.total_posts }}</div>
+          <div class="stat-label">Total Posts</div>
         </div>
-        <div class="dashboard-col dashboard-col-4">
-          <div class="card-pro analytics-pro">
-            <div class="card-pro-header">
-              <h3>Engagement Analytics</h3>
-            </div>
-            <div class="analytics-content-pro">
-              <div class="analytics-metric-pro">
-                <span class="analytics-value-pro"
-                  >{{ engagementPercent }}%</span
-                >
-                <span class="analytics-label-pro">Engagement Rate</span>
-              </div>
-              <div class="progress-pro">
-                <div class="progress-bar-pro">
-                  <div
-                    class="progress-fill-pro"
-                    :style="{ width: engagementPercent + '%' }"
-                  ></div>
-                </div>
-                <div class="progress-labels-pro">
-                  <span>0%</span>
-                  <span>100%</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.total_comments }}</div>
+          <div class="stat-label">Total Comments</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ stats.total_likes }}</div>
+          <div class="stat-label">Total Likes</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value">{{ engagementRate }}%</div>
+          <div class="stat-label">Engagement Rate</div>
+          <progress-bar :value="engagementRate" :max="100"></progress-bar>
         </div>
       </div>
-    </div>
+
+      <!-- Engagement Chart -->
+      <div class="chart-container">
+        <h2>Engagement Overview</h2>
+        <div class="chart-wrapper">
+          <engagement-chart :data="chartData"></engagement-chart>
+        </div>
+      </div>
+
+      <!-- Posts Section -->
+      <div class="posts-section">
+        <PostForm v-if="showPostForm" @post-updated="handlePostUpdated" />
+        <div class="section-header">
+          <h2>Your Posts</h2>
+          <div class="filters">
+            <div class="filter-group">
+              <label for="status-filter">Status</label>
+              <select
+                id="status-filter"
+                v-model="statusFilter"
+                class="filter-select"
+              >
+                <option value="all">All Status</option>
+                <option value="published">Published</option>
+                <option value="draft">Drafts</option>
+                <option value="scheduled">Scheduled</option>
+              </select>
+            </div>
+            <button class="btn secondary" @click="applyFilters">
+              Apply Filters
+            </button>
+          </div>
+        </div>
+
+        <!-- Responsive Table -->
+        <div class="posts-table">
+          <div class="table-responsive">
+            <table>
+              <thead>
+                <tr>
+                  <th>Title</th>
+                  <th>Status</th>
+                  <th>Likes</th>
+                  <th>Comments</th>
+                  <th>Publish Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr v-for="post in paginatedPosts" :key="post.id">
+                  <td data-label="Title">
+                    <router-link :to="`/post/${post.id}`">
+                      {{ post.title }}
+                    </router-link>
+                  </td>
+                  <td data-label="Status">
+                    <span :class="`status-badge ${post.status}`">
+                      {{ post.status }}
+                    </span>
+                  </td>
+                  <td data-label="Likes">{{ post.likes }}</td>
+                  <td data-label="Comments">{{ post.comments }}</td>
+                  <td data-label="Publish Date">
+                    {{ formatDate(post.publishDate) }}
+                  </td>
+                  <td class="actions" data-label="Actions">
+                    <button
+                      class="icon-btn"
+                      title="Edit"
+                      @click="editPost(post.id)"
+                    >
+                      <i class="icon-edit"></i>
+                    </button>
+                    <button
+                      class="icon-btn"
+                      title="View"
+                      @click="viewPost(post.id)"
+                    >
+                      <i class="icon-view"></i>
+                    </button>
+                    <button
+                      class="icon-btn"
+                      title="Delete"
+                      @click="deletePost(post.id)"
+                    >
+                      <i class="icon-delete"></i>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination">
+          <button
+            class="btn secondary"
+            :disabled="currentPage === 1"
+            @click="prevPage"
+          >
+            Previous
+          </button>
+          <span>Page {{ currentPage }} of {{ totalPages }}</span>
+          <button
+            class="btn secondary"
+            :disabled="currentPage === totalPages"
+            @click="nextPage"
+          >
+            Next
+          </button>
+        </div>
+      </div>
+    </main>
   </div>
 </template>
 
 <script>
-import Sidebar from "./shared/Sidebar.vue";
-
+import ProgressBar from "@/components/shared/ProgressBar.vue";
+import EngagementChart from "@/components/shared/EngagementChart.vue";
+import PostForm from "@/components/posts/PostForm.vue";
 export default {
   name: "Dashboard",
   components: {
-    Sidebar,
+    ProgressBar,
+    EngagementChart,
+    PostForm,
   },
   data() {
     return {
-      user: null,
       stats: {
-        totalPosts: 0,
-        published: 0,
-        drafts: 0,
-        likes: 0,
+        total_posts: 0,
+        total_comments: 0,
+        total_likes: 0,
       },
-      tags: [],
+      chartData: {},
       posts: [],
-      filters: {
-        status: "",
-        tag: "",
-        search: "",
-      },
+      statusFilter: "all",
+      searchQuery: "",
+      currentPage: 1,
+      itemsPerPage: 10,
+      loading: false,
+      user: {},
+      showPostForm: false,
     };
-  },
-  created() {
-    this.fetchUserAndStats();
   },
   computed: {
     filteredPosts() {
-      return this.posts.filter((post) => {
-        const matchesStatus = this.filters.status
-          ? post.status === this.filters.status
-          : true;
-        const matchesTag = this.filters.tag
-          ? post.tags.some((tag) => tag.name === this.filters.tag)
-          : true;
-        const matchesSearch = this.filters.search
-          ? post.title.toLowerCase().includes(this.filters.search.toLowerCase())
-          : true;
-        return matchesStatus && matchesTag && matchesSearch;
-      });
+      let filtered = this.posts;
+      if (this.statusFilter !== "all") {
+        filtered = filtered.filter((post) => post.status === this.statusFilter);
+      }
+      if (this.searchQuery) {
+        filtered = filtered.filter((post) =>
+          post.title.toLowerCase().includes(this.searchQuery.toLowerCase())
+        );
+      }
+      if (this.user && this.user.id) {
+        filtered = filtered.filter((post) => post.user_id === this.user.id);
+      }
+      return filtered;
     },
-    engagementPercent() {
-      if (!this.stats.totalPosts) return 0;
-      const engaged = this.posts.filter(
-        (p) => p.status === "published" && p.likes_count > 0
-      ).length;
-      return Math.round((engaged / this.stats.totalPosts) * 100);
+    paginatedPosts() {
+      const start = (this.currentPage - 1) * this.itemsPerPage;
+      return this.filteredPosts.slice(start, start + this.itemsPerPage);
+    },
+    totalPages() {
+      return Math.max(
+        1,
+        Math.ceil(this.filteredPosts.length / this.itemsPerPage)
+      );
+    },
+    engagementRate() {
+      if (this.stats.total_posts === 0) return 0;
+      return Math.round(
+        ((this.stats.total_likes + this.stats.total_comments) /
+          (this.stats.total_posts * 2)) *
+          100
+      );
     },
   },
   methods: {
-    async fetchUserAndStats() {
+    formatDate(dateString) {
+      return new Date(dateString).toLocaleDateString();
+    },
+    prevPage() {
+      if (this.currentPage > 1) this.currentPage--;
+    },
+    nextPage() {
+      if (this.currentPage < this.totalPages) this.currentPage++;
+    },
+    applyFilters() {
+      this.currentPage = 1;
+    },
+    async fetchUser() {
       try {
-        const [userRes, statsRes] = await Promise.all([
-          this.$api.getUserData(),
-          this.$api.getDashboardStats(),
-        ]);
-        this.user = userRes.data;
-        this.stats = statsRes.data.stats || {};
-        this.posts = statsRes.data.posts || [];
-        this.tags = statsRes.data.tags || [];
+        const res = await this.$api.getUserData();
+        this.user = res.data;
       } catch (e) {
-        // fallback: try to get user only
-        try {
-          const userRes = await this.$api.getUserData();
-          this.user = userRes.data;
-        } catch {}
+        this.user = JSON.parse(localStorage.getItem("user")) || { id: null };
       }
     },
-    handleLogout() {
-      localStorage.removeItem("token");
-      this.$router.push("/login");
+    recalculateStatsAndChart() {
+      const posts = this.filteredPosts;
+      this.stats.total_posts = posts.length;
+      this.stats.total_comments = posts.reduce(
+        (sum, p) => sum + (p.comments || 0),
+        0
+      );
+      this.stats.total_likes = posts.reduce(
+        (sum, p) => sum + (p.likes || 0),
+        0
+      );
+      this.chartData = {
+        labels: Array.isArray(posts)
+          ? posts.map((p) =>
+              p.publishDate ? this.formatDate(p.publishDate) : ""
+            )
+          : [],
+        likes: Array.isArray(posts)
+          ? posts.map((p) =>
+              typeof p.likes === "number" ? p.likes : p.likes || 0
+            )
+          : [],
+        comments: Array.isArray(posts)
+          ? posts.map((p) =>
+              typeof p.comments === "number" ? p.comments : p.comments || 0
+            )
+          : [],
+      };
     },
-    formatDate(dateString) {
-      const options = { year: "numeric", month: "short", day: "numeric" };
-      return new Date(dateString).toLocaleDateString(undefined, options);
+    async fetchPosts() {
+      try {
+        this.loading = true;
+        const res = await this.$api.getPosts();
+        this.posts = (res.data.data || [])
+          .filter((post) => post.user_id === this.user.id)
+          .map((post) => ({
+            ...post,
+            publishDate: post.publishDate || post.created_at || "",
+            likes:
+              typeof post.likes === "number" ? post.likes : post.likes || 0,
+            comments:
+              typeof post.comments === "number"
+                ? post.comments
+                : post.comments || 0,
+          }));
+      } catch (e) {
+        this.posts = [];
+      } finally {
+        this.loading = false;
+        this.recalculateStatsAndChart();
+      }
     },
+    editPost(id) {
+      this.$router.push({ name: "DashboardPostForm", params: { id } });
+    },
+    viewPost(id) {
+      this.$router.push({ name: "DashboardPosts", params: { id } });
+    },
+    async deletePost(id) {
+      if (confirm("Are you sure you want to delete this post?")) {
+        await this.$api.deletePost(id);
+        this.fetchPosts();
+      }
+    },
+    async handlePostUpdated() {
+      await this.fetchPosts();
+    },
+  },
+  async created() {
+    await this.fetchUser();
+    await this.fetchPosts();
   },
 };
 </script>
 
-<style scoped>
-.dashboard-pro {
-  background: #f6f8fa;
-  min-height: 100vh;
-  padding: 0 0 2rem 0;
-}
-.dashboard-header-pro {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  background: #fff;
-  border-radius: 0 0 18px 18px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  padding: 2rem 2.5rem 1.5rem 2.5rem;
-  margin-bottom: 2.5rem;
-  gap: 2rem;
-}
-.user-summary {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-}
-.avatar-lg {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  object-fit: cover;
-  border: 3px solid #e5e7eb;
-}
-.avatar-lg-alt {
-  width: 72px;
-  height: 72px;
-  border-radius: 50%;
-  background: #4361ee;
-  color: #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 2.2rem;
-  font-weight: 700;
-}
-.user-info h2 {
-  margin: 0 0 0.25rem 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-}
-.user-email {
-  color: #6c757d;
-  font-size: 1rem;
-}
-.quick-stats {
-  display: flex;
-  gap: 2rem;
-}
-.quick-stat-card {
-  background: #f8fafd;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(67, 97, 238, 0.04);
-  padding: 1.25rem 2rem;
-  min-width: 120px;
-  text-align: center;
-}
-.quick-stat-label {
-  color: #6c757d;
-  font-size: 0.95rem;
-  margin-bottom: 0.25rem;
-}
-.quick-stat-value {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #4361ee;
-}
-.dashboard-content-pro {
-  max-width: 1400px;
-  margin: 0 auto;
-  padding: 0 2rem;
-}
-.dashboard-row {
-  display: flex;
-  gap: 2rem;
-  flex-wrap: wrap;
-}
-.dashboard-col {
-  flex: 1 1 0;
-  min-width: 320px;
-}
-.dashboard-col-8 {
-  flex-basis: 0;
-  flex-grow: 2;
-}
-.dashboard-col-4 {
-  flex-basis: 0;
-  flex-grow: 1;
-  min-width: 320px;
-}
-.card-pro {
-  background: #fff;
-  border-radius: 16px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.04);
-  margin-bottom: 2rem;
-  padding: 2rem 2rem 1.5rem 2rem;
-}
-.card-pro-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1.5rem;
-}
-.filters-pro {
-  display: flex;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-}
-.search-box-pro {
-  position: relative;
-  min-width: 200px;
-}
-.search-box-pro input {
-  padding-right: 2.2rem;
-}
-.search-box-pro i {
-  position: absolute;
-  right: 0.75rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #6c757d;
-}
-.table-responsive-pro {
-  overflow-x: auto;
-}
-.table-pro {
+<style lang="scss" scoped>
+// Variables
+$primary-color: #4361ee;
+$secondary-color: #3a0ca3;
+$light-bg: #f8f9fa;
+$dark-text: #2b2d42;
+$light-text: #6c757d;
+$success: #4cc9f0;
+$warning: #f8961e;
+$danger: #f72585;
+$border-radius: 8px;
+$box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+
+// Base styles
+.dashboard-container {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 1px 4px rgba(67, 97, 238, 0.04);
+  min-height: 100vh;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: $dark-text;
+  background: $light-bg;
 }
-.table-pro th,
-.table-pro td {
-  padding: 1rem 1.25rem;
-  text-align: left;
+
+.content {
+  width: 100%;
+  padding: 1.5rem;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 1400px;
+
+  @media (min-width: $breakpoint-lg) {
+    padding: 2rem;
+  }
 }
-.table-pro th {
-  background: #f8fafd;
-  color: #6c757d;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-bottom: 1px solid #e5e7eb;
-}
-.table-pro td {
-  border-bottom: 1px solid #f1f3f5;
-  vertical-align: middle;
-}
-.table-pro tr:last-child td {
-  border-bottom: none;
-}
-.post-title-pro {
-  font-weight: 600;
-  color: #212529;
-}
-.status-badge-pro {
-  display: inline-block;
-  padding: 0.35rem 0.85rem;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  text-transform: capitalize;
-  background: #e6f7ff;
-  color: #0c8599;
-}
-.status-badge-pro.draft {
-  background: #fff4e6;
-  color: #e67700;
-}
-.tags-pro {
-  display: flex;
-  gap: 0.5rem;
-  flex-wrap: wrap;
-}
-.tag-pro {
-  display: inline-block;
-  padding: 0.25rem 0.75rem;
-  background: #f1f3f5;
-  border-radius: 20px;
-  font-size: 0.85rem;
-  color: #6c757d;
-}
-.actions-pro {
-  display: flex;
-  gap: 0.5rem;
-}
-.btn-icon-pro {
-  width: 32px;
-  height: 32px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  color: #6c757d;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.btn-icon-pro:hover {
-  background: #f8fafd;
-  color: #212529;
-}
-.no-data-pro {
-  padding: 2rem;
-  text-align: center;
-  color: #6c757d;
-}
-.analytics-pro {
-  min-height: 320px;
+
+// Header styles
+.content-header {
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
-}
-.analytics-content-pro {
-  width: 100%;
-  margin-top: 1.5rem;
-}
-.analytics-metric-pro {
-  text-align: center;
-  margin-bottom: 1.5rem;
-}
-.analytics-value-pro {
-  font-size: 2.5rem;
-  font-weight: 700;
-  color: #4361ee;
-}
-.analytics-label-pro {
-  color: #6c757d;
-  font-size: 1.1rem;
-}
-.progress-pro {
-  margin-top: 1rem;
-}
-.progress-bar-pro {
-  height: 12px;
-  background: #e9ecef;
-  border-radius: 6px;
-  overflow: hidden;
-}
-.progress-fill-pro {
-  height: 100%;
-  background: #4361ee;
-  border-radius: 6px;
-  transition: width 0.6s ease;
-}
-.progress-labels-pro {
-  display: flex;
-  justify-content: space-between;
-  margin-top: 0.5rem;
-  font-size: 0.9rem;
-  color: #6c757d;
-}
-@media (max-width: 1100px) {
-  .dashboard-row {
-    flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  @media (min-width: $breakpoint-md) {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
   }
-  .dashboard-col-8,
-  .dashboard-col-4 {
-    min-width: 0;
-    width: 100%;
+
+  .header-title h1 {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+
+    @media (min-width: $breakpoint-md) {
+      font-size: 1.75rem;
+    }
   }
-}
-@media (max-width: 700px) {
-  .dashboard-header-pro {
+
+  .header-actions {
+    display: flex;
     flex-direction: column;
-    align-items: flex-start;
-    padding: 1.5rem 1rem 1rem 1rem;
     gap: 1rem;
+    width: 100%;
+
+    @media (min-width: $breakpoint-md) {
+      flex-direction: row;
+      align-items: center;
+      justify-content: flex-end;
+      width: auto;
+    }
   }
-  .dashboard-content-pro {
-    padding: 0 0.5rem;
+}
+
+.search-box {
+  position: relative;
+  width: 100%;
+
+  @media (min-width: $breakpoint-md) {
+    width: 250px;
   }
-  .card-pro {
-    padding: 1rem 0.5rem 1rem 0.5rem;
+
+  input {
+    width: 100%;
+    padding: 0.5rem 1rem 0.5rem 2.5rem;
+    border-radius: $border-radius;
+    border: 1px solid #ddd;
+    font-size: 0.9rem;
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
   }
-  .quick-stats {
-    gap: 0.5rem;
+
+  .icon-search {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $light-text;
+  }
+}
+
+// Stats grid
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(1, 1fr);
+  gap: 1rem;
+  margin-bottom: 2rem;
+
+  @media (min-width: 500px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  @media (min-width: $breakpoint-md) {
+    grid-template-columns: repeat(4, 1fr);
+  }
+
+  .stat-card {
+    background: white;
+    padding: 1.25rem;
+    border-radius: $border-radius;
+    box-shadow: $box-shadow;
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+      line-height: 1;
+
+      @media (min-width: $breakpoint-md) {
+        font-size: 2rem;
+      }
+    }
+
+    .stat-label {
+      color: $light-text;
+      margin-bottom: 0.5rem;
+      font-size: 0.9rem;
+    }
+
+    .stat-trend {
+      font-size: 0.875rem;
+
+      &.positive {
+        color: $success;
+      }
+
+      &.negative {
+        color: $danger;
+      }
+    }
+  }
+}
+
+// Chart container
+.chart-container {
+  background: white;
+  padding: 1.25rem;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+  margin-bottom: 2rem;
+
+  h2 {
+    margin: 0 0 1rem 0;
+    font-size: 1.25rem;
+  }
+
+  .chart-wrapper {
+    position: relative;
+    width: 100%;
+    min-height: 250px;
+  }
+}
+
+// Posts section
+.posts-section {
+  background: white;
+  padding: 1.25rem;
+  border-radius: $border-radius;
+  box-shadow: $box-shadow;
+
+  .section-header {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+
+    @media (min-width: $breakpoint-md) {
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.25rem;
+    }
+  }
+
+  .filters {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    width: 100%;
+
+    @media (min-width: $breakpoint-md) {
+      flex-direction: row;
+      align-items: center;
+      width: auto;
+    }
+  }
+
+  .filter-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    width: 100%;
+
+    @media (min-width: $breakpoint-md) {
+      width: auto;
+    }
+
+    label {
+      font-size: 0.8rem;
+      color: $light-text;
+    }
+  }
+
+  .filter-select {
+    padding: 0.5rem 1rem;
+    border-radius: $border-radius;
+    border: 1px solid #ddd;
+    background: white;
+    font-size: 0.9rem;
+    width: 100%;
+
+    @media (min-width: $breakpoint-md) {
+      width: auto;
+      min-width: 150px;
+    }
+
+    &:focus {
+      outline: none;
+      border-color: $primary-color;
+    }
+  }
+}
+
+// Table styles
+.posts-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  .table-responsive {
+    min-width: 600px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+      text-align: left;
+      border-bottom: 1px solid #eee;
+
+      @media (min-width: $breakpoint-md) {
+        padding: 1rem;
+      }
+    }
+
+    td {
+      a {
+        color: $primary-color;
+        text-decoration: none;
+        font-weight: 500;
+
+        &:hover {
+          text-decoration: underline;
+        }
+      }
+    }
+
+    tr:hover td {
+      background: lighten($primary-color, 45%);
+    }
+  }
+}
+
+// Status badges
+.status-badge {
+  display: inline-block;
+  padding: 0.25rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-transform: capitalize;
+
+  &.published {
+    background: rgba($success, 0.1);
+    color: darken($success, 20%);
+  }
+
+  &.draft {
+    background: rgba($warning, 0.1);
+    color: darken($warning, 20%);
+  }
+
+  &.scheduled {
+    background: rgba($primary-color, 0.1);
+    color: darken($primary-color, 20%);
+  }
+}
+
+// Actions
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+// Pagination
+.pagination {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #eee;
+
+  @media (min-width: $breakpoint-md) {
+    flex-direction: row;
+    justify-content: center;
+  }
+
+  > span {
+    font-size: 0.9rem;
+    color: $light-text;
+  }
+}
+
+// Button styles
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: $border-radius;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+
+  &.primary {
+    background: $primary-color;
+    color: white;
+
+    &:hover {
+      background: darken($primary-color, 10%);
+    }
+  }
+
+  &.secondary {
+    background: white;
+    border: 1px solid #ddd;
+    color: $light-text;
+
+    &:hover {
+      border-color: $primary-color;
+      color: $primary-color;
+    }
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: $light-text;
+  cursor: pointer;
+  padding: 0.25rem;
+  font-size: 1rem;
+
+  &:hover {
+    color: $primary-color;
+  }
+}
+
+// Mobile table styles
+@media (max-width: $breakpoint-md) {
+  .table-responsive {
+    thead {
+      display: none;
+    }
+
+    tr {
+      display: block;
+      margin-bottom: 1rem;
+      border-bottom: 2px solid #eee;
+    }
+
+    td {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      text-align: right;
+      border-bottom: 1px dotted #eee;
+
+      &::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: $light-text;
+        margin-right: 1rem;
+        text-align: left;
+      }
+
+      &.actions {
+        justify-content: flex-end;
+      }
+    }
   }
 }
 </style>

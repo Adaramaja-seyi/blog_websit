@@ -33,15 +33,24 @@
       </li>
     </ul>
     <form @submit.prevent="addComment">
-      <div class="mb-2">
+      <div class="input-group mb-3">
         <textarea
           v-model="newComment"
           class="form-control"
           placeholder="Add a comment..."
           required
+          rows="3"
+          style="resize: none"
         ></textarea>
+        <button
+          class="btn btn-primary"
+          type="submit"
+          :disabled="!newComment.trim()"
+          title="Send comment"
+        >
+          Send
+        </button>
       </div>
-      <button class="btn btn-primary" type="submit">Post Comment</button>
     </form>
   </div>
 </template>

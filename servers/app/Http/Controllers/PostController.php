@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Comment;
-use App\Models\like;
+use App\Models\Like;
 use Illuminate\Http\Request;
 use App\Models\Post;
 use App\Models\User;
@@ -15,9 +15,31 @@ class PostController extends Controller
     public function index()
     {
         try {
-            $posts = Post::with(['user', 'comments.user'])
-                ->latest()
-                ->get();
+            $userId = Auth::id();
+            $filterUserId = request()->query('user_id');
+            $query = Post::with(['user', 'comments.user', 'likes'])->latest();
+            if ($filterUserId) {
+                $query->where('user_id', $filterUserId);
+            }
+            $posts = $query->get()->map(function ($post) use ($userId) {
+                $isLiked = $post->likes->contains('user_id', $userId);
+                return [
+                    'id' => $post->id,
+                    'title' => $post->title,
+                    'content' => $post->content,
+                    'slug' => $post->slug,
+                    'featured_image' => $post->featured_image,
+                    'is_published' => $post->is_published,
+                    'user' => $post->user,
+                    'created_at' => $post->created_at,
+                    'updated_at' => $post->updated_at,
+                    'likes_count' => $post->likes->count(),
+                    'comments_count' => $post->comments->count(),
+                    'is_liked' => $isLiked,
+                    'comments' => $post->comments,
+                    'likes' => $post->likes,
+                ];
+            });
 
             return response()->json([
                 'success' => true,
@@ -26,7 +48,7 @@ class PostController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching posts'
+                'message' => 'Error fetching posts: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -64,10 +86,9 @@ class PostController extends Controller
                 'message' => 'Post created successfully'
             ], 201);
         } catch (\Exception $e) {
-
             return response()->json([
                 'success' => false,
-                'message' => 'Error creating post'  . $e->getMessage()
+                'message' => 'Error creating post: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -77,12 +98,12 @@ class PostController extends Controller
         try {
             return response()->json([
                 'success' => true,
-                'data' => $post->load(['user', 'comments.user'])
+                'data' => $post->load(['user', 'comments.user', 'likes'])
             ]);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Post not found'  . $e->getMessage()
+                'message' => 'Error fetching post: ' . $e->getMessage()
             ], 404);
         }
     }
@@ -104,6 +125,18 @@ class PostController extends Controller
                 'is_published' => 'boolean'
             ]);
 
+            // Generate new slug if title changed
+            if (isset($validated['title']) && $validated['title'] !== $post->title) {
+                $slug = Str::slug($validated['title']);
+                $originalSlug = $slug;
+                $counter = 1;
+                while (Post::where('slug', $slug)->where('id', '!=', $post->id)->exists()) {
+                    $slug = $originalSlug . '-' . $counter;
+                    $counter++;
+                }
+                $validated['slug'] = $slug;
+            }
+
             $post->update($validated);
 
             return response()->json([
@@ -114,7 +147,7 @@ class PostController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error updating post'  . $e->getMessage()
+                'message' => 'Error updating post: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -139,7 +172,7 @@ class PostController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error deleting post'  . $e->getMessage()
+                'message' => 'Error deleting post: ' . $e->getMessage()
             ], 500);
         }
     }
@@ -157,13 +190,14 @@ class PostController extends Controller
             $published = $user->posts()->where('is_published', true)->count();
             $drafts = $user->posts()->where('is_published', false)->count();
             $totalComments = $user->comments()->count();
-            
-            // Get likes count for user's posts
-            $totalLikes = \App\Models\Like::whereIn('post_id', $user->posts()->pluck('id'))->count();
 
-            // Paginate posts for dashboard (first 10)
+            // Get likes count for user's posts
+            $totalLikes = Like::whereIn('post_id', $user->posts()->pluck('id'))->count();
+
+            // Get recent posts for dashboard
             $posts = $user->posts()
                 ->withCount(['comments', 'likes'])
+                ->with(['user'])
                 ->latest()
                 ->limit(10)
                 ->get();
@@ -195,21 +229,30 @@ class PostController extends Controller
     {
         try {
             $posts = Post::with(['user'])
+                ->withCount(['comments', 'likes'])
                 ->latest()
                 ->limit(5)
                 ->get()
                 ->map(function ($post) {
+                    $userData = [
+                        'name' => $post->user->name ?? 'Unknown',
+                        'avatar' => $post->user->avatar ?? null
+                    ];
+
+                    // Only add ID if user exists
+                    if ($post->user && property_exists($post->user, 'id')) {
+                        $userData['id'] = $post->user->id;
+                    }
+
                     return [
                         'id' => $post->id,
                         'title' => $post->title,
                         'content' => $post->content,
                         'status' => $post->is_published ? 'published' : 'draft',
                         'created_at' => $post->created_at,
-                        'user' => [
-                            'name' => $post->user->name
-                        ],
-                        'comment_count' => $post->comments->count(),
-                        'like_count' => $post->likes->count()
+                        'user' => $userData,
+                        'comment_count' => $post->comments_count ?? 0,
+                        'like_count' => $post->likes_count ?? 0
                     ];
                 });
 
@@ -220,7 +263,7 @@ class PostController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Error fetching recent posts'
+                'message' => 'Error fetching recent posts: ' . $e->getMessage()
             ], 500);
         }
     }

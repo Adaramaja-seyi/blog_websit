@@ -5,7 +5,6 @@ const apiClient = axios.create({
     withCredentials: true
 });
 
-
 // Add token interceptor
 apiClient.interceptors.request.use(config => {
     const token = localStorage.getItem('token');
@@ -55,11 +54,7 @@ export default {
     },
 
     updateProfile(data) {
-        return apiClient.post('/update_profile', data, {
-            headers: {
-                'Content-Type': 'multipart/form-data'
-            }
-        });
+        return apiClient.post('/update_profile', data);
     },
 
     getPosts() {
@@ -87,6 +82,7 @@ export default {
     deletePost(id) {
         return apiClient.delete(`/posts/${id}`);
     },
+
     // New methods for Dashboard.vue
     getDashboardStats(params) {
         return apiClient.get('/dashboard/stats', { params });
@@ -97,25 +93,51 @@ export default {
     getRecentComments() {
         return apiClient.get('/comments/recent');
     },
-    
+
     // Landing feed methods
     likePost(postId) {
-        return apiClient.post(`posts/${postId}/like`);
+        return apiClient.post(`posts/${postId}/like`, { post_id: postId });
     },
-    
     unlikePost(postId) {
-        return apiClient.post(`posts/${postId}/unlike`);
+        return apiClient.post(`posts/${postId}/unlike`, { post_id: postId });
     },
-    
+
     addComment(postId, data) {
         return apiClient.post(`posts/${postId}/comments`, data);
     },
-    
+
     getComments(postId) {
         return apiClient.get(`posts/${postId}/comments`);
     },
-    
+
     getPosts(params = {}) {
         return apiClient.get('/posts', { params });
     },
+
+    // Missing methods for LandingFeed.vue
+    getStories() {
+        return apiClient.get('/stories');
+    },
+
+    getContacts() {
+        return apiClient.get('/contacts');
+    },
+
+    // Additional methods for stories
+    createStory(data) {
+        return apiClient.post('/stories', data);
+    },
+
+    deleteStory(id) {
+        return apiClient.delete(`/stories/${id}`);
+    },
+
+    // Additional methods for contacts
+    addContact(data) {
+        return apiClient.post('/contacts', data);
+    },
+
+    removeContact(id) {
+        return apiClient.delete(`/contacts/${id}`);
+    }
 };

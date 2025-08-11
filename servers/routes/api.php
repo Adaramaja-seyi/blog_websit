@@ -37,6 +37,7 @@ Route::middleware('auth:sanctum')->group(function () {
     // Comments
     Route::apiResource('comments', CommentController::class)->except(['index']);
     Route::get('posts/{post}/comments', [CommentController::class, 'index']);
+    Route::post('posts/{post}/comments', [CommentController::class, 'store']);
     Route::post('comments/{comment}/approve', [CommentController::class, 'approve']);
 
     // Likes

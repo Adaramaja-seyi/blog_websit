@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Log;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -20,11 +21,11 @@ class AuthController extends Controller
                 'required',
 
                 Password::min(8)
-                    // ->letters()
-                    // ->mixedCase()
-                    // ->numbers()
-                    // ->symbols()
-                    // ->uncompromised()
+                // ->letters()
+                // ->mixedCase()
+                // ->numbers()
+                // ->symbols()
+                // ->uncompromised()
             ],
         ]);
 
@@ -85,36 +86,49 @@ class AuthController extends Controller
 
     public function updateProfile(Request $request)
     {
+        // Log the authenticated user for debugging
+        Log::info('Authenticated user', ['user' => $request->user()]);
+        // Log each field individually for debugging
+        Log::info('Profile update fields', [
+            'user_id' => optional($request->user())->id,
+            'name' => $request->input('name'),
+            'bio' => $request->input('bio'),
+            'gender' => $request->input('gender'),
+            'avatar' => $request->file('avatar') ? $request->file('avatar')->getClientOriginalName() : null,
+            'all' => $request->all(),
+        ]);
         $user = $request->user();
 
-        $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'email' => 'sometimes|required|string|email|max:255|unique:users,email,' . $user->id,
+        // Validate the request
+        $request->validate([
+            'name' => 'nullable|string|max:255',
+            'email' => 'nullable|string|email|max:255|unique:users,email,' . $user->id,
             'bio' => 'nullable|string|max:1000',
             'avatar' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'profile_picture' => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
             'gender' => 'nullable|string|in:male,female,other',
         ]);
 
-        // Only update provided fields
-        $updateData = [];
-        if (isset($validated['name'])) $updateData['name'] = $validated['name'];
-        if (isset($validated['email'])) $updateData['email'] = $validated['email'];
-        if (isset($validated['bio'])) $updateData['bio'] = $validated['bio'];
-        if (isset($validated['gender'])) $updateData['gender'] = $validated['gender'];
-
-        // Handle avatar/profile_picture upload with consistent naming
-        if ($request->hasFile('avatar')) {
-            $avatarPath = $request->file('avatar')->store('avatars', 'public');
-            $updateData['avatar'] = '/storage/' . $avatarPath;
-        } elseif ($request->hasFile('profile_picture')) {
-            $avatarPath = $request->file('profile_picture')->store('avatars', 'public');
-            $updateData['avatar'] = '/storage/' . $avatarPath;
+        // Update only fields that are present in the request (including empty strings)
+        if ($request->has('name')) {
+            $user->name = $request->input('name');
+        }
+        if ($request->has('bio')) {
+            $user->bio = $request->input('bio');
+        }
+        if ($request->has('gender')) {
+            $user->gender = $request->input('gender');
         }
 
-        $user->update($updateData);
+        // Handle file upload
+        if ($request->hasFile('avatar')) {
+            $avatarPath = $request->file('avatar')->store('avatars', 'public');
+            $user->avatar = '/storage/' . $avatarPath;
+        }
 
-        // Return updated user data
+        // Save the user
+        $user->save();
+
+        // Return fresh user data
         return response()->json([
             'message' => 'Profile updated successfully',
             'user' => $user->fresh()
